@@ -1,0 +1,37 @@
+# .gitignore
+
+# ⭐ Environment variables (tsy tokony ho ao anaty git!)
+.env
+.env.local
+.env.*.local
+
+# ⭐ Credentials (tsy tokony ho ao anaty git!)
+admin_credentials.txt
+*.pem
+*.pfx
+*.cert
+
+# ⭐ Database (tsy tokony ho ao anaty git!)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ⭐ Logs (tsy tokony ho ao anaty git!)
+logs/
+*.log
+
+# ⭐ Backups (tsy tokony ho ao anaty git!)
+backups/
+*.backup
+
+# ⭐ Node modules (tsy tokony ho ao anaty git!)
+node_modules/
+
+# ⭐ Build (tsy tokony ho ao anaty git!)
+dist/
+release/
+*.AppImage
+*.exe
+*.dmg

@@ -1,0 +1,78 @@
+// ============================================================
+// src/components/parametres/ParametresGeneral.tsx - SYNCED FONTS
+// ⭐ FIX: Font Size mifanaraka amin'ny Sidebar (14px/15px/13px)
+// ============================================================
+
+import React from 'react'; 
+import { Settings, Tag, Building, Globe, Coins, Calendar, Clock } from 'lucide-react';
+
+interface AppSettings { appName: string; companyName: string; language: string; currency: string; dateFormat: string; timeZone: string; }
+interface ParametresGeneralProps { settings: AppSettings; onSettingsChange: (settings: AppSettings) => void; }
+interface FormCellProps { label: string; icon?: React.ReactNode; children: React.ReactNode; borderRight?: boolean; borderBottom?: boolean; }
+
+const FormCell: React.FC<FormCellProps> = ({ label, icon, children, borderRight = true, borderBottom = true }) => {
+  return (
+    <div className={`group relative flex flex-col px-4 py-4 bg-white dark:bg-[#0F172A] transition-colors duration-200 ${borderRight ? 'border-r border-slate-200 dark:border-slate-800' : ''} ${borderBottom ? 'border-b border-slate-200 dark:border-slate-800' : ''} hover:bg-slate-50/70 dark:hover:bg-slate-900/30`}>
+      <div className="absolute left-0 top-0 h-full w-[2px] bg-indigo-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+      <div className="mb-2 flex items-center gap-1.5">
+        {icon && <span className="text-indigo-500 dark:text-indigo-400">{icon}</span>}
+        {/* ⭐ LABEL: 13px (nohavaozina avy amin'ny 11px) */}
+        <span className="text-[13px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
+      </div>
+      <div className="w-full">{children}</div>
+    </div>
+  );
+};
+
+const ParametresGeneral: React.FC<ParametresGeneralProps> = ({ settings, onSettingsChange }) => {
+  const handleChange = (key: keyof AppSettings, value: string) => { onSettingsChange({ ...settings, [key]: value }); };
+  const fieldClass = `w-full h-10 rounded-lg border px-3 text-[14px] font-medium outline-none transition-all duration-150 bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 dark:bg-[#0F172A] dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/10`;
+  
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-slate-800 dark:bg-[#0F172A] dark:shadow-none">
+      <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"><Settings size={18} strokeWidth={2} /></div>
+          <div className="min-w-0">
+            {/* ⭐ TITRE: 15px */}
+            <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Paramètres généraux</h2>
+            {/* ⭐ SUBTITRE: 13px (nohavaozina avy amin'ny 12px) */}
+            <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">Configurez les informations principales de votre application</p>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+        <FormCell label="Nom de l'application" icon={<Tag size={14} />} borderRight borderBottom>
+          <input type="text" value={settings.appName} onChange={e => handleChange('appName', e.target.value)} className={fieldClass} placeholder="Nom de votre application" />
+        </FormCell>
+        <FormCell label="Entreprise" icon={<Building size={14} />} borderRight borderBottom>
+          <input type="text" value={settings.companyName} onChange={e => handleChange('companyName', e.target.value)} className={fieldClass} placeholder="Nom de l'entreprise" />
+        </FormCell>
+        <FormCell label="Langue" icon={<Globe size={14} />} borderRight={false} borderBottom>
+          <select value={settings.language} onChange={e => handleChange('language', e.target.value)} className={fieldClass}>
+            <option value="fr">Français</option><option value="en">English</option><option value="mg">Malagasy</option>
+          </select>
+        </FormCell>
+        <FormCell label="Devise" icon={<Coins size={14} />} borderRight borderBottom={false}>
+          <select value={settings.currency} onChange={e => handleChange('currency', e.target.value)} className={fieldClass}>
+            <option value="Ar">Ariary (Ar)</option><option value="€">Euro (€)</option><option value="$">Dollar ($)</option>
+          </select>
+        </FormCell>
+        <FormCell label="Format de date" icon={<Calendar size={14} />} borderRight borderBottom={false}>
+          <select value={settings.dateFormat} onChange={e => handleChange('dateFormat', e.target.value)} className={fieldClass}>
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option><option value="MM/DD/YYYY">MM/DD/YYYY</option><option value="YYYY-MM-DD">YYYY-MM-DD</option>
+          </select>
+        </FormCell>
+        <FormCell label="Fuseau horaire" icon={<Clock size={14} />} borderRight={false} borderBottom={false}>
+          <select value={settings.timeZone} onChange={e => handleChange('timeZone', e.target.value)} className={fieldClass}>
+            <option value="Indian/Antananarivo">Antananarivo (GMT+3)</option>
+            <option value="Europe/Paris">Paris (GMT+1)</option>
+            <option value="America/New_York">New York (GMT-5)</option>
+            <option value="Asia/Tokyo">Tokyo (GMT+9)</option>
+          </select>
+        </FormCell>
+      </div>
+    </section>
+  );
+};
+export default ParametresGeneral;

@@ -1,0 +1,3 @@
+const { registerDashboardHandlers } = require('./dashboard/handlers.cjs');
+const { prepareStatements, stmtStats, stmtFinancialSummary, stmtRecentOrders, stmtRecentExpenses, stmtRecentClients, stmtQuickStats, stmtChartCommandes, stmtChartEntrees, stmtChartSorties } = require('./dashboard/statements.cjs');
+module.exports = { registerDashboardHandlers, prepareStatements, stmtStats, stmtFinancialSummary, stmtRecentOrders, stmtRecentExpenses, stmtRecentClients, stmtQuickStats, stmtChartCommandes, stmtChartEntrees, stmtChartSorties };
