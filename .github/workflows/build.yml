@@ -30,9 +30,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lifes-art-win64-exe
-          path: |
-            release/win-unpacked/*.exe
-            release/*.exe
+          path: release/lifes-art-*.exe
 
   build-linux:
     runs-on: ubuntu-latest
@@ -59,5 +57,5 @@ jobs:
         with:
           name: lifes-art-linux
           path: |
-            release/*.AppImage
-            release/*.deb
+            release/lifes-art-*.AppImage
+            release/lifes-art-*.deb
