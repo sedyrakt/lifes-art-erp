@@ -56,4 +56,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lifes-art-linux
-          path: release/*.AppImage
+          path: |
+            release/*.AppImage
+            release/*.deb
