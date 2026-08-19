@@ -1,61 +1,305 @@
+# ============================================================
+# .github/workflows/build.yml
+# ============================================================
+# LIFE'S ART - ELECTRON DESKTOP BUILD
+#
+# Generates:
+#   Windows  -> Portable EXE
+#   Linux    -> AppImage + DEB
+#
+# Artifacts:
+#   lifes-art-win64
+#   lifes-art-linux
+# ============================================================
+
 name: Build Windows EXE & Linux DEB
 
+# ============================================================
+# TRIGGERS
+# ============================================================
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+
   workflow_dispatch:
 
+# ============================================================
+# GLOBAL ENVIRONMENT
+# ============================================================
+env:
+  NODE_VERSION: 20
+
+# ============================================================
+# JOBS
+# ============================================================
 jobs:
+
+  # ==========================================================
+  # WINDOWS BUILD
+  # ==========================================================
   build-windows:
+
+    name: Build Windows Portable EXE
+
     runs-on: windows-latest
+
     steps:
+
+      # ========================================================
+      # 1. CHECKOUT SOURCE CODE
+      # ========================================================
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
+
+      # ========================================================
+      # 2. SETUP NODE.JS
+      # ========================================================
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
+
+      # ========================================================
+      # 3. INSTALL DEPENDENCIES
+      # ========================================================
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
+
+      # ========================================================
+      # 4. BUILD VITE FRONTEND
+      # ========================================================
       - name: Build Vite frontend
         run: npm run build
 
-      - name: Build Windows EXE (Portable)
-        run: npx electron-builder --win --x64 --publish=never --dir
 
+      # ========================================================
+      # 5. BUILD WINDOWS PORTABLE EXE
+      # ========================================================
+      #
+      # IMPORTANT:
+      #
+      # We intentionally DO NOT use:
+      #
+      #   --dir
+      #
+      # because --dir creates an unpacked directory and
+      # does NOT generate a portable .exe.
+      #
+      # "portable" generates a real Windows executable.
+      #
+      # ========================================================
+      - name: Build Windows Portable EXE
+        run: npx electron-builder --win portable --x64 --publish=never
+
+
+      # ========================================================
+      # 6. DISPLAY RELEASE FILES
+      # ========================================================
+      #
+      # This makes debugging much easier if electron-builder
+      # changes the generated filename.
+      #
+      # ========================================================
+      - name: List Windows release files
+        shell: powershell
+        run: |
+          Write-Host ""
+          Write-Host "========================================"
+          Write-Host " WINDOWS RELEASE DIRECTORY"
+          Write-Host "========================================"
+          Write-Host ""
+
+          if (Test-Path "release") {
+
+            Get-ChildItem "release" -Recurse |
+              Select-Object FullName, Length
+
+          } else {
+
+            Write-Host "ERROR: release directory was not found."
+            exit 1
+
+          }
+
+
+      # ========================================================
+      # 7. VERIFY WINDOWS EXE
+      # ========================================================
+      - name: Verify Windows EXE
+        shell: powershell
+        run: |
+          $exeFiles = Get-ChildItem "release" -Filter "*.exe" -File -ErrorAction SilentlyContinue
+
+          if ($null -eq $exeFiles -or $exeFiles.Count -eq 0) {
+
+            Write-Host ""
+            Write-Host "ERROR: No Windows EXE was generated."
+            Write-Host ""
+            Write-Host "Files currently inside release:"
+            Get-ChildItem "release" -Recurse
+            exit 1
+
+          }
+
+          Write-Host ""
+          Write-Host "Windows EXE found:"
+          $exeFiles | ForEach-Object {
+            Write-Host $_.FullName
+          }
+
+
+      # ========================================================
+      # 8. UPLOAD WINDOWS EXE
+      # ========================================================
       - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
         with:
-          name: lifes-art-win64-exe
-          path: release/lifes-art-*.exe
+          name: lifes-art-win64
+          path: release/*.exe
+          if-no-files-found: error
 
+
+  # ==========================================================
+  # LINUX BUILD
+  # ==========================================================
   build-linux:
+
+    name: Build Linux AppImage & DEB
+
     runs-on: ubuntu-latest
+
     steps:
+
+      # ========================================================
+      # 1. CHECKOUT SOURCE CODE
+      # ========================================================
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
+
+      # ========================================================
+      # 2. SETUP NODE.JS
+      # ========================================================
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
+
+      # ========================================================
+      # 3. INSTALL DEPENDENCIES
+      # ========================================================
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
+
+      # ========================================================
+      # 4. BUILD VITE FRONTEND
+      # ========================================================
       - name: Build Vite frontend
         run: npm run build
 
-      - name: Build Linux AppImage & DEB
-        run: npx electron-builder --linux --x64 --publish=never
 
+      # ========================================================
+      # 5. BUILD LINUX APPIMAGE + DEB
+      # ========================================================
+      #
+      # Generates:
+      #
+      #   *.AppImage
+      #   *.deb
+      #
+      # ========================================================
+      - name: Build Linux AppImage & DEB
+        run: npx electron-builder --linux AppImage deb --x64 --publish=never
+
+
+      # ========================================================
+      # 6. DISPLAY RELEASE FILES
+      # ========================================================
+      - name: List Linux release files
+        shell: bash
+        run: |
+          echo ""
+          echo "========================================"
+          echo " LINUX RELEASE DIRECTORY"
+          echo "========================================"
+          echo ""
+
+          if [ -d "release" ]; then
+
+            find release -maxdepth 2 -type f -printf '%p\n'
+
+          else
+
+            echo "ERROR: release directory was not found."
+            exit 1
+
+          fi
+
+
+      # ========================================================
+      # 7. VERIFY APPIMAGE
+      # ========================================================
+      - name: Verify AppImage
+        shell: bash
+        run: |
+          APPIMAGE_COUNT=$(find release -maxdepth 1 -type f -name "*.AppImage" | wc -l)
+
+          if [ "$APPIMAGE_COUNT" -eq 0 ]; then
+
+            echo ""
+            echo "ERROR: No AppImage was generated."
+            echo ""
+            echo "Files currently inside release:"
+            find release -maxdepth 2 -type f
+            exit 1
+
+          fi
+
+          echo ""
+          echo "AppImage found:"
+          find release -maxdepth 1 -type f -name "*.AppImage"
+
+
+      # ========================================================
+      # 8. VERIFY DEB
+      # ========================================================
+      - name: Verify DEB
+        shell: bash
+        run: |
+          DEB_COUNT=$(find release -maxdepth 1 -type f -name "*.deb" | wc -l)
+
+          if [ "$DEB_COUNT" -eq 0 ]; then
+
+            echo ""
+            echo "ERROR: No DEB package was generated."
+            echo ""
+            echo "Files currently inside release:"
+            find release -maxdepth 2 -type f
+            exit 1
+
+          fi
+
+          echo ""
+          echo "DEB package found:"
+          find release -maxdepth 1 -type f -name "*.deb"
+
+
+      # ========================================================
+      # 9. UPLOAD LINUX ARTIFACTS
+      # ========================================================
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: lifes-art-linux
           path: |
-            release/lifes-art-*.AppImage
-            release/lifes-art-*.deb
+            release/*.AppImage
+            release/*.deb
+          if-no-files-found: error
