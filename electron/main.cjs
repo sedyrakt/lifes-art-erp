@@ -2,6 +2,14 @@
 const { app, BrowserWindow, ipcMain, session, shell, protocol, Menu, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+// ⭐ VAOVAO: Nampidirina ny dotenv eto aloha mba hahita ny .env
+const dotenv = require('dotenv');
+
+// ⭐ FANITSARA: Mampiasa ny app.getAppPath() mba hahita tsara ilay .env na dia ao anaty asar aza
+dotenv.config({
+  path: path.join(app.getAppPath(), '.env')
+});
+
 const { initDatabase, closeDatabase } = require('./database/init.cjs');
 const { getDb, getDbPath, getDatabaseDebugInfo } = require('./database/connection.cjs');
 const { log, warn, error } = require('./database/utils.cjs');
@@ -19,6 +27,11 @@ const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173
 function mainLog(...args) { console.log('[MAIN]', ...args); }
 function mainWarn(...args) { console.warn('[MAIN]', ...args); }
 function mainError(...args) { console.error('[MAIN]', ...args); }
+
+// ⭐ FANITSARA: Fanamarinana aloha mba hahita raha misy ilay .env
+mainLog('🔐 JWT_SECRET loaded:', Boolean(process.env.JWT_SECRET));
+mainLog('📦 APP PATH:', app.getAppPath());
+mainLog('📄 ENV PATH:', path.join(app.getAppPath(), '.env'));
 
 function printDatabaseInfo() {
   try {
@@ -78,23 +91,15 @@ function registerLocalImageProtocol() {
         let pathname = request.url.replace(/^local-image:\/\//i, '');
         try { pathname = decodeURIComponent(pathname); } catch (_) {}
         pathname = pathname.replace(/^\/+/, '');
-        
         const queryIndex = pathname.indexOf('?');
-        if (queryIndex !== -1) {
-          pathname = pathname.substring(0, queryIndex);
-        }
-
-        console.log(`[local-image] 🔍 Demande (sans query): ${pathname}`);
-
+        if (queryIndex !== -1) pathname = pathname.substring(0, queryIndex);
         const uploadsDir = path.resolve(app.getPath('userData'), 'uploads');
         const requestedPath = path.resolve(uploadsDir, pathname);
         const normalizedUploads = path.resolve(uploadsDir);
-        
         if (requestedPath !== normalizedUploads && !requestedPath.startsWith(normalizedUploads + path.sep)) {
           mainWarn('🚫 Tentative accès fichier interdit:', pathname); return new Response('Forbidden', { status: 403 });
         }
         if (!fs.existsSync(requestedPath)) {
-          console.log(`[local-image] ❌ Image introuvable: ${requestedPath}`);
           return new Response('Image not found', { status: 404 });
         }
         const stat = await fs.promises.stat(requestedPath);
@@ -117,10 +122,7 @@ function showMainWindow(reason = 'unknown') {
     mainWindow.show();
     mainWindow.focus();
     mainLog(`🟢 Window affichée - ${reason}`);
-    if (isDev) {
-      mainLog('🛠️ DEVTOOLS mode');
-      mainWindow.webContents.openDevTools({ mode: 'detach' });
-    }
+    if (isDev) { mainLog('🛠️ DEVTOOLS mode'); mainWindow.webContents.openDevTools({ mode: 'detach' }); }
   } catch (err) { mainError('❌ Impossible afficher BrowserWindow:', err.message); }
 }
 
@@ -129,15 +131,7 @@ function createMainWindow() {
   mainLog('🪟 Création BrowserWindow...');
   mainWindow = new BrowserWindow({
     width: 1440, height: 900, minWidth: 1100, minHeight: 700, show: true, backgroundColor: '#0A1222', autoHideMenuBar: true,
-    webPreferences: {
-      preload: PRELOAD_PATH,
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: false,
-      webSecurity: !isDev,
-      allowRunningInsecureContent: isDev,
-      devTools: isDev
-    }
+    webPreferences: { preload: PRELOAD_PATH, contextIsolation: true, nodeIntegration: false, sandbox: false, webSecurity: !isDev, allowRunningInsecureContent: isDev, devTools: isDev }
   });
   try { mainWindow.setMenuBarVisibility(false); mainWindow.setAutoHideMenuBar(true); } catch (err) { mainWarn('⚠️ Impossible masquer menu:', err.message); }
 
@@ -169,9 +163,7 @@ function createMainWindow() {
       if (isAllowedExternalUrl(url)) shell.openExternal(url);
     } catch (err) { event.preventDefault(); mainWarn('⚠️ Navigation bloquée:', err.message); }
   });
-  if (!isDev) {
-    mainWindow.webContents.on('devtools-opened', () => { try { mainWindow.webContents.closeDevTools(); } catch (_) {} });
-  }
+  if (!isDev) mainWindow.webContents.on('devtools-opened', () => { try { mainWindow.webContents.closeDevTools(); } catch (_) {} });
   mainWindow.webContents.on('render-process-gone', (event, details) => mainError('❌ Renderer process gone:', details));
   mainWindow.webContents.on('unresponsive', () => mainWarn('⚠️ Renderer unresponsive'));
   mainWindow.webContents.on('responsive', () => mainLog('🟢 Renderer responsive'));
@@ -191,9 +183,7 @@ async function loadFrontend() {
       mainLog('✅ Vite frontend chargé');
       return;
     }
-    if (!fs.existsSync(DIST_INDEX)) {
-      throw new Error(`Frontend production introuvable: ${DIST_INDEX}`);
-    }
+    if (!fs.existsSync(DIST_INDEX)) throw new Error(`Frontend production introuvable: ${DIST_INDEX}`);
     mainLog('📦 Production frontend:', DIST_INDEX);
     await mainWindow.loadFile(DIST_INDEX);
     mainLog('✅ Production frontend chargé');
@@ -212,6 +202,10 @@ function registerHandlerModule(label, modulePath) {
     const absolutePath = path.resolve(__dirname, modulePath);
     if (!fs.existsSync(absolutePath)) { mainWarn(`⚠️ Handler ${label} introuvable:`, absolutePath); return false; }
     const handler = require(absolutePath);
+    // ⭐ FANITSARA: Fanamarinana ilay module vao nampidirina
+    mainLog(`📦 [${label}] Module loaded: ${absolutePath}`);
+    mainLog(`📦 [${label}] Exports:`, handler && typeof handler === 'object' ? Object.keys(handler) : typeof handler);
+    
     let result = false;
     if (typeof handler === 'function') { result = handler(ipcMain); }
     else if (handler && typeof handler.register === 'function') { result = handler.register(ipcMain); }
@@ -260,17 +254,12 @@ function registerAllIPC() {
     mainLog('✅ IPC app:getInfo enregistré');
   } catch (err) { mainWarn('⚠️ IPC app:getInfo:', err.message); }
 
-  // ============================================================
-  // ⭐ AJOUT CRUCIAL: IPC pour utils:saveFile (Enregistrer sous)
-  // ============================================================
+  // IPC utils:save-file
   try {
-    // ⭐ Tsy maintsy atao ny listenerCount mba tsy ho duplicate
     if (!ipcMain.listenerCount('utils:save-file')) {
       ipcMain.handle('utils:save-file', async (event, data, defaultPath) => {
         try {
           mainLog('📄 Demande de sauvegarde de fichier...');
-          
-          // Afficher la boîte de dialogue "Enregistrer sous"
           const result = await dialog.showSaveDialog({
             title: 'Enregistrer le fichier',
             defaultPath: defaultPath || 'document.pdf',
@@ -280,22 +269,10 @@ function registerAllIPC() {
             ],
             properties: ['createDirectory', 'showOverwriteConfirmation']
           });
-
-          // Si l'utilisateur a annulé
-          if (result.canceled) {
-            mainLog('📄 Enregistrement annulé par l\'utilisateur');
-            return { canceled: true };
-          }
-
-          // Vérifier que le chemin est valide
-          if (!result.filePath) {
-            return { canceled: true };
-          }
-
-          // Écrire le fichier
+          if (result.canceled) return { canceled: true };
+          if (!result.filePath) return { canceled: true };
           const buffer = Buffer.from(data);
           await fs.promises.writeFile(result.filePath, buffer);
-          
           mainLog(`✅ Fichier enregistré avec succès: ${result.filePath}`);
           return { success: true, filePath: result.filePath };
         } catch (err) {
@@ -304,9 +281,7 @@ function registerAllIPC() {
         }
       });
       mainLog('✅ IPC utils:save-file enregistré avec succès');
-    } else {
-      mainLog('ℹ️ IPC utils:save-file déjà enregistré');
-    }
+    } else { mainLog('ℹ️ IPC utils:save-file déjà enregistré'); }
   } catch (err) { mainWarn('⚠️ IPC utils:save-file:', err.message); }
 
   handlersRegistered = true;
@@ -314,12 +289,8 @@ function registerAllIPC() {
 }
 
 function configureSecurity() {
-  try {
-    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => { callback(new Set(['notifications']).has(permission)); });
-  } catch (err) { mainWarn('⚠️ Permission handler:', err.message); }
-  try {
-    session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (details, callback) => { if (isDev && details.url.startsWith(DEV_SERVER_URL)) { callback({ cancel: false }); return; } callback({ cancel: false }); });
-  } catch (err) { mainWarn('⚠️ webRequest config:', err.message); }
+  try { session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => { callback(new Set(['notifications']).has(permission)); }); } catch (err) { mainWarn('⚠️ Permission handler:', err.message); }
+  try { session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (details, callback) => { if (isDev && details.url.startsWith(DEV_SERVER_URL)) { callback({ cancel: false }); return; } callback({ cancel: false }); }); } catch (err) { mainWarn('⚠️ webRequest config:', err.message); }
 }
 
 function setupSingleInstance() {

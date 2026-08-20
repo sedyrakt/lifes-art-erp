@@ -1,7 +1,8 @@
 // ============================================================
 // electron/ipc/auth/handlers.cjs - COMPACT + RETURN TRUE
+// ⭐ FANITSARA: Nesoriko ny require('dotenv').config() satria efa atao ao main.cjs
 // ============================================================
-require('dotenv').config();
+'use strict';
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -15,8 +16,9 @@ const { normalizeEmail, normalizeRow, normalizeRows } = require('./validation.cj
 
 const statementsModule = require('./statements.cjs');
 
+// ⭐ FANITSARA: process.env dia efa voaload tao main.cjs
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) { error('❌ JWT_SECRET manquant dans .env'); throw new Error('❌ JWT_SECRET manquant dans .env'); }
+if (!JWT_SECRET) { error('❌ JWT_SECRET manquant dans process.env'); throw new Error('❌ JWT_SECRET manquant dans process.env'); }
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const SESSION_EXPIRY_HOURS = parseInt(process.env.SESSION_EXPIRY_HOURS) || 24;
 const TWO_FACTOR_ENABLED = process.env.TWO_FACTOR_ENABLED !== 'false';
@@ -145,7 +147,7 @@ function registerAuthHandlers(ipcMain) {
   const registeredEvents = ipcMain.eventNames();
   log('📋 [auth.handlers] Vérification handlers:'); for (const ch of channels) log(`   - ${ch}: ${registeredEvents.includes(ch) ? '✅' : '❌'}`);
   log('🔐 =========================================='); log('✅ Auth handlers enregistrés avec succès (Fix password retrieval)'); log('🔐 ==========================================');
-  return true; // ⭐ ZAVA-DEHIBE: Mamerina TRUE
+  return true;
 }
 
 module.exports = { registerAuthHandlers };
