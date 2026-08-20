@@ -1,0 +1,49 @@
+# electron-builder.yml
+
+appId: com.lifesart.app
+productName: lifes-art
+directories:
+  output: release
+compression: normal          # Mampiasa 'normal' mba tsy ho tara loatra ao amin'ny GitHub Actions
+npmRebuild: true
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+  - .env
+  - "!**/*.js.map"            # Manala ny source maps ihany, tsy manala ny fichiers hafa rehetra
+  - "!**/node_modules/.cache/**"
+
+extraResources:
+  - from: .env
+    to: .env
+
+asar: true
+asarUnpack:
+  - "**/*.node"
+  - "**/node_modules/better-sqlite3/**/*"
+  - "**/node_modules/sharp/**/*"
+  - "electron/ipc/**/*"
+  - "electron/preload.cjs"
+
+win:
+  target:
+    - portable                # Mamorona Portable EXE ihany. Raha tiana installer koa dia ampidiro "- nsis"
+  icon: public/logo.ico       # Tsarovy ho .ico ny endriky ny sary
+
+# Raha manisy NSIS ianao dia afaka ampiasaina ity:
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Office
+  icon: public/logo.png       # Ho an'ny Linux dia .png no ampiasaina
+
+mac:
+  target: dmg
+  icon: public/logo.icns      # Raha mac ianao dia .icns ilaina
