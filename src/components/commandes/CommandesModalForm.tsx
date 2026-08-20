@@ -10,7 +10,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ShoppingCart, X, Phone, Mail, CheckCircle, User, Lightbulb, Info, Search, Box, Clock } from 'lucide-react';
+import { ShoppingCart, X, Phone, Mail, CheckCircle, User,Lightbulb, Check, Info, Search, Box, Clock } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { formatMoney } from '../../lib/formatMoney';
 import CommandesProductSelector from './CommandesProductSelector';

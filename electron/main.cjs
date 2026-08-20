@@ -1,5 +1,5 @@
 'use strict';
-const { app, BrowserWindow, ipcMain, session, shell, protocol, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, session, shell, protocol, Menu, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { initDatabase, closeDatabase } = require('./database/init.cjs');
@@ -187,7 +187,6 @@ async function loadFrontend() {
   try {
     if (isDev) {
       mainLog('🌐 Loading Vite:', DEV_SERVER_URL);
-      // ⭐ FIX: ESORY ILay TIMEOUT 15 secondes
       await mainWindow.loadURL(DEV_SERVER_URL);
       mainLog('✅ Vite frontend chargé');
       return;
@@ -260,6 +259,56 @@ function registerAllIPC() {
     }
     mainLog('✅ IPC app:getInfo enregistré');
   } catch (err) { mainWarn('⚠️ IPC app:getInfo:', err.message); }
+
+  // ============================================================
+  // ⭐ AJOUT CRUCIAL: IPC pour utils:saveFile (Enregistrer sous)
+  // ============================================================
+  try {
+    // ⭐ Tsy maintsy atao ny listenerCount mba tsy ho duplicate
+    if (!ipcMain.listenerCount('utils:save-file')) {
+      ipcMain.handle('utils:save-file', async (event, data, defaultPath) => {
+        try {
+          mainLog('📄 Demande de sauvegarde de fichier...');
+          
+          // Afficher la boîte de dialogue "Enregistrer sous"
+          const result = await dialog.showSaveDialog({
+            title: 'Enregistrer le fichier',
+            defaultPath: defaultPath || 'document.pdf',
+            filters: [
+              { name: 'PDF', extensions: ['pdf'] },
+              { name: 'Tous les fichiers', extensions: ['*'] }
+            ],
+            properties: ['createDirectory', 'showOverwriteConfirmation']
+          });
+
+          // Si l'utilisateur a annulé
+          if (result.canceled) {
+            mainLog('📄 Enregistrement annulé par l\'utilisateur');
+            return { canceled: true };
+          }
+
+          // Vérifier que le chemin est valide
+          if (!result.filePath) {
+            return { canceled: true };
+          }
+
+          // Écrire le fichier
+          const buffer = Buffer.from(data);
+          await fs.promises.writeFile(result.filePath, buffer);
+          
+          mainLog(`✅ Fichier enregistré avec succès: ${result.filePath}`);
+          return { success: true, filePath: result.filePath };
+        } catch (err) {
+          mainError('❌ Erreur lors de la sauvegarde du fichier:', err.message);
+          return { success: false, error: err.message };
+        }
+      });
+      mainLog('✅ IPC utils:save-file enregistré avec succès');
+    } else {
+      mainLog('ℹ️ IPC utils:save-file déjà enregistré');
+    }
+  } catch (err) { mainWarn('⚠️ IPC utils:save-file:', err.message); }
+
   handlersRegistered = true;
   mainLog('============================================================'); mainLog(`✅ IPC READY: ${successCount}/${handlerModules.length} modules`); mainLog('============================================================');
 }

@@ -372,7 +372,7 @@ const EmployesPaiementModal: React.FC<Props> = ({
         className="
           relative
           w-full
-          max-w-[1120px]
+          max-w-[950px]
           h-[92vh]
           sm:h-[90vh]
           rounded-2xl

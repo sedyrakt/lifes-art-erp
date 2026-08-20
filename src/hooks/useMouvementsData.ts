@@ -37,7 +37,6 @@ export default function useMouvementsData() {
     return () => { isMounted.current = false; fetchLock.current = false; }; 
   }, []);
 
-  // ⭐ FIX MAJEUR: Mampiasa images.getUrl mba hahazoana ilay sary
   const loadImageForMouvement = useCallback(async (mouvement: Mouvement) => {
     if (!mouvement?.produit_image || !window.api?.images?.getUrl) return;
     try {
@@ -47,14 +46,23 @@ export default function useMouvementsData() {
       if (!isMounted.current) return;
       if (url) setImageUrls(prev => ({ ...prev, [mouvement.id]: url }));
       else setImageErrors(prev => ({ ...prev, [mouvement.id]: true }));
-    } catch (err) { console.error('[useMouvementsData] Image error:', err); if (isMounted.current) setImageErrors(prev => ({ ...prev, [mouvement.id]: true })); }
+    } catch (err) { 
+      console.error('[useMouvementsData] Image error:', err); 
+      if (isMounted.current) setImageErrors(prev => ({ ...prev, [mouvement.id]: true })); 
+    }
   }, []);
 
   const loadPage = useCallback(async (direction: 'next' | 'prev' | 'refresh') => {
     if (fetchLock.current) { console.warn('[useMouvementsData] Fetch déjà en cours'); return; }
     fetchLock.current = true;
     try {
-      if (direction === 'refresh') { setCurrentPage(1); setLastId(null); setMouvements([]); setHasMore(true); cursorHistory.current = [null]; }
+      if (direction === 'refresh') { 
+        setCurrentPage(1); 
+        setLastId(null); 
+        setMouvements([]); 
+        setHasMore(true); 
+        cursorHistory.current = [null]; 
+      }
       let targetLastId: number | null = null;
       if (direction === 'next') targetLastId = lastId;
       if (direction === 'prev') targetLastId = cursorHistory.current[currentPage - 2] ?? null;
@@ -101,7 +109,6 @@ export default function useMouvementsData() {
       const data: Mouvement[] = Array.isArray(result.data) ? result.data : [];
       const newLastId = data.length > 0 ? Number(data[data.length - 1].id) : null;
       
-      // ⭐ Soloina (overwrite) ny liste rehetra
       setMouvements(data); 
 
       if (direction === 'next') { 
@@ -132,7 +139,6 @@ export default function useMouvementsData() {
     }
   }, [debouncedSearch, filterType, filterDate, sortOption, lastId, currentPage, loadImageForMouvement]);
 
-  // Recharge quand les filtres changent
   useEffect(() => { void loadPage('refresh'); }, [debouncedSearch, filterType, filterDate, sortOption]);
 
   const handleNextPage = useCallback(() => { if (hasMore && !loading && !fetchLock.current) void loadPage('next'); }, [hasMore, loading, loadPage]);
@@ -142,7 +148,10 @@ export default function useMouvementsData() {
     if (forceRefresh) await loadPage('refresh'); else await loadPage('refresh'); 
   }, [loadPage]);
 
-  const handleSelectAll = useCallback((checked: boolean) => { setSelectedIds(checked ? new Set(mouvements.map(m => m.id)) : new Set()); }, [mouvements]);
+  const handleSelectAll = useCallback((checked: boolean) => { 
+    setSelectedIds(checked ? new Set(mouvements.map(m => m.id)) : new Set()); 
+  }, [mouvements]);
+
   const handleSelectOne = useCallback((id: number, checked: boolean) => { 
     setSelectedIds(prev => { const next = new Set(prev); checked ? next.add(id) : next.delete(id); return next; }); 
   }, []);
@@ -181,4 +190,4 @@ export default function useMouvementsData() {
     ITEMS_PER_PAGE, selectedIds, setSelectedIds, handleSelectAll, handleSelectOne, bulkDelete, imageUrls, imageErrors, loadImageForMouvement, hasMore,
     handleNextPage, handlePrevPage, getTypeColor, getTypeLabel, getTypeIcon,
   };
-};
+}

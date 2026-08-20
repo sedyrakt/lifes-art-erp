@@ -1,7 +1,6 @@
 // ============================================================
 // src/components/company/CompanySettingsModal.tsx
-// ⭐ UNIFIED DESIGN: Mitovy loko, padding, animation sy typographie
-// ⭐ Layout, FontSize, Colors mitovy amin'ny CommandesModalForm
+// ⭐ FIX MAJEUR: Esorina ny downloadPDF mba tsy hisy double Save Dialog
 // ============================================================
 
 import React, { useEffect, useState } from 'react';
@@ -9,8 +8,9 @@ import { X, Building2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCompanySettings } from './CompanySettingsModal/hooks/useCompanySettings';
 import { CompanySettingsModalProps } from './CompanySettingsModal/types';
+// ⭐ FIX: ESORY ILAY IMPORT SATRIA EFA AO AMIN'NY COMMANDES.TSX NY GENERATION
+// import { downloadPDF } from '../../lib/pdfService'; 
 
-// ⭐ COLORS UNIFIED (Indigo Palette mitovy amin'ny Commandes)
 const COLORS = {
   light: {
     overlay: 'rgba(15, 23, 42, 0.55)',
@@ -62,11 +62,15 @@ const COLORS = {
   },
 };
 
-// Imports des composants internes
 import CompanySettingsHeader from './CompanySettingsModal/CompanySettingsHeader';
 import CompanySettingsForm from './CompanySettingsModal/CompanySettingsForm';
 
-const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
+interface ExtendedCompanySettingsModalProps extends CompanySettingsModalProps {
+  commandeForInvoice?: any;
+  onPDFGenerated?: (success: boolean, filePath?: string) => void;
+}
+
+const CompanySettingsModal: React.FC<ExtendedCompanySettingsModalProps> = ({
   isOpen,
   onClose,
   onSave,
@@ -74,6 +78,8 @@ const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
   initialData,
   isDark: propIsDark,
   mode = 'generate',
+  commandeForInvoice, 
+  onPDFGenerated,    
 }) => {
   const { isDark: contextIsDark } = useTheme();
   const isDark = propIsDark !== undefined ? propIsDark : contextIsDark;
@@ -93,16 +99,53 @@ const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
     handleGenerate,
   } = useCompanySettings(initialData, onSave, onGenerate);
 
-  // ⭐ Animation Fade-in / Slide-up
   const [isVisible, setIsVisible] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
   useEffect(() => {
     if (!isOpen) { setIsVisible(false); return; }
     const timer = window.setTimeout(() => setIsVisible(true), 10);
     return () => window.clearTimeout(timer);
   }, [isOpen]);
 
+  // ⭐ FIX: ESORINA NY downloadPDF AO ANATIN'ITY FA EFA AO AMIN'NY COMMANDES.TSX
   const handleGenerateWithClose = async () => {
-    await handleGenerate();
+    if (isGenerating || loading || savingImage) return;
+    
+    setIsGenerating(true);
+    console.log('🔄 Début de la génération de facture...');
+    
+    try {
+      // 1. Générer la facture (via le hook) -> Io no miantso ny onGenerate any Commandes.tsx
+      const result = await handleGenerate();
+      console.log('📄 Résultat de handleGenerate:', result);
+
+      // 2. Raha canceled na success dia tsy manao na inona na inona eto
+      if (result?.canceled) {
+        console.log('📄 Génération annulée par l\'utilisateur');
+        if (onPDFGenerated) onPDFGenerated(false);
+        // ⭐ FIX: Tsy mikatona raha annulé
+        return;
+      }
+
+      if (result?.success) {
+        console.log('✅ Génération terminée avec succès');
+        if (onPDFGenerated) onPDFGenerated(true);
+        // ⭐ FIX: Mikatona ny modal rehefa vita ny génération (ny PDF dia efa natao tao Commandes)
+        onClose();
+        return;
+      }
+
+      // 3. Erreur
+      console.error('❌ Erreur lors de la génération:', result?.error || 'Erreur inconnue');
+      if (onPDFGenerated) onPDFGenerated(false);
+      
+    } catch (error: any) {
+      console.error('❌ Erreur inattendue lors de la génération:', error);
+      if (onPDFGenerated) onPDFGenerated(false);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -121,10 +164,8 @@ const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
         style={{ background: theme.card, borderColor: theme.border }}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* ⭐ Barre Indigo ambony */}
         <div className="absolute left-0 right-0 top-0 z-30 h-[3px]" style={{ background: theme.primary }} />
 
-        {/* ==================== HEADER ==================== */}
         <header className="flex shrink-0 items-center justify-between gap-4 border-b px-5 py-4 sm:px-6" style={{ borderColor: theme.border, background: theme.surface }}>
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border" style={{ borderColor: theme.border, background: theme.surfaceSoft }}>
@@ -142,7 +183,6 @@ const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
           </button>
         </header>
 
-        {/* ==================== BODY (FORMULAIRE) ==================== */}
         <form className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6 sm:py-6 custom-company-scrollbar">
           <CompanySettingsForm
             formData={formData}
@@ -158,7 +198,6 @@ const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
           />
         </form>
 
-        {/* ==================== FOOTER (UNIFIED BUTTONS) ==================== */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-t px-5 py-3 sm:px-6" style={{ background: theme.footer, borderColor: theme.border }}>
           <div className="hidden items-center gap-1.5 text-[11px] font-medium sm:flex" style={{ color: theme.subMuted }}>
             <span className="rounded border px-1.5 py-0.5" style={{ borderColor: theme.border }}>ESC</span>
@@ -174,17 +213,23 @@ const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
               Fermer
             </button>
 
-
             <button
               type="button"
               onClick={handleGenerateWithClose}
-              disabled={loading}
+              disabled={loading || savingImage || isGenerating}
               className="flex h-9 items-center gap-2 rounded-lg px-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               style={{ background: theme.primary }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = theme.primaryHover; }}
+              onMouseEnter={e => { if (!loading && !savingImage && !isGenerating) e.currentTarget.style.background = theme.primaryHover; }}
               onMouseLeave={e => { e.currentTarget.style.background = theme.primary; }}
             >
-              Générer la facture
+              {loading || savingImage || isGenerating ? (
+                <>
+                  <span className="animate-spin">⚙️</span>
+                  {savingImage ? 'Sauvegarde image...' : (isGenerating ? 'Génération...' : 'Génération...')}
+                </>
+              ) : (
+                'Générer la facture'
+              )}
             </button>
           </div>
         </div>

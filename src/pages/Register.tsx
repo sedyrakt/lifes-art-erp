@@ -215,7 +215,7 @@ export const Register: React.FC = () => {
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <div className="grid grid-cols-2 gap-2">
               <FormInput label="Prénom" name="firstName" value={formData.firstName} onChange={handleInputChange} placeholder="Prenom" icon={User} error={errors.firstName} />
-              <FormInput label="Nom" name="lastName" value={formData.lastName} onChange={handleInputChange} placeholder="Dupont" icon={User} error={errors.lastName} />
+              <FormInput label="Nom" name="lastName" value={formData.lastName} onChange={handleInputChange} placeholder="Nom" icon={User} error={errors.lastName} />
             </div>
             <FormInput label="Email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Addresse email" icon={Mail} error={errors.email} autoComplete="email" />
             <FormInput label="Entreprise" name="companyName" value={formData.companyName} onChange={handleInputChange} placeholder="Nom de votre société" icon={Building} error={errors.companyName} />

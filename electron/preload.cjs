@@ -138,7 +138,7 @@ const api = {
     onMouvementAdded: (callback) => on('stock:mouvement-added', callback),
   },
   employes: {
-    getAll: (options) => invoke('employes:get-all', options), // ⭐ FIX: Nampidirina options
+    getAll: (options) => invoke('employes:get-all', options),
     getById: (id) => invoke('employes:get-by-id', id),
     create: (data) => invoke('employes:create', data),
     update: (id, data) => invoke('employes:update', id, data),
@@ -277,6 +277,7 @@ const api = {
   utils: {
     exportData: (data, format) => invoke('utils:export-data', data, format),
     print: () => invoke('utils:print'),
+    // ⭐ AJOUT CRUCIAL: saveFile (Enregistrer sous) - Tena zava-dehibe io!
     saveFile: (data, defaultPath) => invoke('utils:save-file', data, defaultPath),
   },
   platform: {

@@ -1,5 +1,6 @@
 // src/components/company/CompanySettingsModal/hooks/useCompanySettings.ts
 // ⭐ FANITSARA VAOVAO: Nesoriko ny success/error messages ao anatin'ny onGenerate
+// ⭐ FIX: Nampiana fanamarinana mba tsy hiverina erreur rehefa vita ny génération
 // ============================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -226,38 +227,67 @@ export const useCompanySettings = (
   }, [formData, imageId, validate, onSave, updateCompany]);
 
   // ⭐ VAOVAO: Nesoriko ny setSuccessMessage sy setErrorMessage. Ny Commandes no hikarakara ny Success/Error.
+  // ⭐ FIX: Nampiana fanamarinana mba tsy hiverina erreur rehefa vita ny génération
   const handleGenerate = useCallback(async () => {
+    console.log('🔄 useCompanySettings: handleGenerate appelé');
+    
     if (!validate()) {
+      console.error('❌ Validation échouée');
       return { error: 'Veuillez corriger les erreurs' };
     }
+    
     setLoading(true);
     try {
       const dataToSave: CompanyData = {
         ...formData,
         image: imageId || formData.image || ''
       };
+      
+      // Enregistrer les données de l'entreprise
       if (onSave) {
         onSave(dataToSave);
       } else {
         await updateCompany(dataToSave);
       }
       
+      // Générer la facture
       let generateResult: any = null;
       if (onGenerate) {
+        console.log('🔄 Appel de onGenerate...');
         generateResult = await onGenerate(dataToSave);
+        console.log('📄 Résultat de onGenerate:', generateResult);
       }
 
+      // ⭐ FIX: Vérifier si la génération a réussi
       if (generateResult && generateResult.canceled) {
+        console.log('📄 Génération annulée par l\'utilisateur');
         return { canceled: true };
       }
       
-      if (!generateResult || !generateResult.success) {
-        return { error: generateResult?.error || 'Erreur lors de la génération de la facture' };
+      // ⭐ FIX: Si onGenerate n'a pas été appelé ou a réussi sans erreur
+      if (!onGenerate) {
+        console.log('✅ Pas de onGenerate, retour success');
+        return { success: true };
       }
       
-      return { success: true };
+      // ⭐ FIX: Vérifier si la génération a réussi
+      if (generateResult && generateResult.success) {
+        console.log('✅ Génération réussie');
+        return { success: true };
+      }
+      
+      // ⭐ FIX: Si generateResult est undefined mais onGenerate existe, considérer comme réussi
+      if (generateResult === undefined) {
+        console.log('✅ onGenerate a retourné undefined, considéré comme réussi');
+        return { success: true };
+      }
+      
+      // ⭐ Erreur si generateResult n'est pas success
+      console.error('❌ Erreur lors de la génération:', generateResult?.error || 'Erreur inconnue');
+      return { error: generateResult?.error || 'Erreur lors de la génération de la facture' };
     } catch (error: any) {
-      return { error: error.message };
+      console.error('❌ Erreur inattendue lors de la génération:', error);
+      return { error: error.message || 'Erreur lors de la génération de la facture' };
     } finally {
       setLoading(false);
     }
