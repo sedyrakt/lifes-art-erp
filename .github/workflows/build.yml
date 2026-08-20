@@ -1,25 +1,37 @@
+# ============================================================
+# LIFE'S ART ERP
+# GitHub Actions - Windows + Linux (Fully Optimized)
+# ============================================================
+
+name: Build & Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
   # ==========================================================
-  # LINUX (Deb only)
+  # WINDOWS
   # ==========================================================
 
-  build-linux:
+  build-windows:
 
-    name: Build Linux DEB Package
+    name: Build Windows Installer EXE (NSIS only)
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
 
-      # ------------------------------------------------------
-      # CHECKOUT
-      # ------------------------------------------------------
-
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # ------------------------------------------------------
-      # NODE.JS
-      # ------------------------------------------------------
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -27,20 +39,12 @@
           node-version: 22
           cache: npm
 
-      # ------------------------------------------------------
-      # GET VERSION
-      # ------------------------------------------------------
-
       - name: Get application version
-        shell: bash
+        shell: pwsh
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "Application version: $VERSION"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      # ------------------------------------------------------
-      # CACHE ELECTRON
-      # ------------------------------------------------------
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          Write-Host "Application version: $version"
+          "VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Cache Electron
         uses: actions/cache@v4
@@ -53,37 +57,119 @@
           restore-keys: |
             ${{ runner.os }}-electron-
 
-      # ------------------------------------------------------
-      # INSTALL DEPENDENCIES
-      # ------------------------------------------------------
-
       - name: Install dependencies
         run: npm ci
-
-      # ------------------------------------------------------
-      # REBUILD NATIVE MODULES
-      # ------------------------------------------------------
 
       - name: Rebuild native modules (better-sqlite3)
         run: npx electron-rebuild -f -w better-sqlite3
 
-      # ------------------------------------------------------
-      # BUILD & OBFUSCATE FRONTEND (Build:prod)
-      # ------------------------------------------------------
+      - name: Build secure frontend (Build, Obfuscate, Compile)
+        run: npm run build:prod
+
+      - name: Build Windows Installer EXE (NSIS)
+        run: npx electron-builder --win --x64 --config electron-builder.yml --publish=never
+
+      - name: Show Windows output
+        shell: pwsh
+        run: |
+          Write-Host ""
+          Write-Host "=========================================="
+          Write-Host " WINDOWS BUILD OUTPUT"
+          Write-Host "=========================================="
+          if (!(Test-Path "release")) {
+            Write-Host "ERROR: release directory does not exist."
+            exit 1
+          }
+          Get-ChildItem release -Recurse -File | Select-Object FullName, Length
+
+      - name: Verify Windows EXE
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem release -File -Filter "*.exe"
+          if ($files.Count -eq 0) {
+            Write-Host "ERROR: No Windows EXE found."
+            exit 1
+          }
+          Write-Host ""
+          Write-Host "Windows EXE Found:"
+          $files | ForEach-Object {
+            Write-Host $_.FullName
+          }
+
+      - name: Rename Windows EXE
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem release -File -Filter "*.exe"
+          foreach ($file in $files) {
+            $newName = "lifes-art-$env:VERSION-win64-setup.exe"
+            Write-Host "Renaming:"
+            Write-Host "$($file.Name)"
+            Write-Host "to"
+            Write-Host "$newName"
+            Rename-Item `
+              -Path $file.FullName `
+              -NewName $newName `
+              -Force
+          }
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifes-art-win64-v${{ env.VERSION }}
+          path: release/*.exe
+          if-no-files-found: error
+
+
+  # ==========================================================
+  # LINUX (Deb only)
+  # ==========================================================
+
+  build-linux:
+
+    name: Build Linux DEB Package
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Get application version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Application version: $VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.electron
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild native modules (better-sqlite3)
+        run: npx electron-rebuild -f -w better-sqlite3
 
       - name: Build secure frontend (Build, Obfuscate, Compile)
         run: npm run build:prod
 
-      # ------------------------------------------------------
-      # BUILD LINUX (deb only)
-      # ------------------------------------------------------
-
       - name: Build Linux DEB
         run: npx electron-builder --linux deb --x64 --config electron-builder.yml --publish=never
-
-      # ------------------------------------------------------
-      # SHOW OUTPUT
-      # ------------------------------------------------------
 
       - name: Show Linux output
         shell: bash
@@ -92,33 +178,21 @@
           echo "=========================================="
           echo " LINUX BUILD OUTPUT"
           echo "=========================================="
-
           if [ ! -d "release" ]; then
             echo "ERROR: release directory does not exist."
             exit 1
           fi
-
           find release -maxdepth 1 -type f -print
-
-      # ------------------------------------------------------
-      # VERIFY DEB (AppImage check n'esorina)
-      # ------------------------------------------------------
 
       - name: Verify DEB
         shell: bash
         run: |
           COUNT=$(find release -maxdepth 1 -type f -name "*.deb" | wc -l)
-
           echo "DEB count: $COUNT"
-
           if [ "$COUNT" -eq 0 ]; then
             echo "ERROR: DEB package not found."
             exit 1
           fi
-
-      # ------------------------------------------------------
-      # RENAME LINUX DEB
-      # ------------------------------------------------------
 
       - name: Rename Linux DEB
         shell: bash
@@ -129,10 +203,6 @@
             fi
           done
 
-      # ------------------------------------------------------
-      # SHOW FINAL ARTIFACTS
-      # ------------------------------------------------------
-
       - name: Show final Linux artifacts
         shell: bash
         run: |
@@ -141,10 +211,6 @@
           echo " FINAL LINUX ARTIFACTS"
           echo "=========================================="
           ls -lah release/
-
-      # ------------------------------------------------------
-      # UPLOAD LINUX ARTIFACTS
-      # ------------------------------------------------------
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
