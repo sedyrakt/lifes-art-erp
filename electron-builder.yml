@@ -5,14 +5,14 @@ productName: lifes-art
 directories:
   output: release
 compression: normal
-npmRebuild: false             # Atao false mba tsy hanao rebuild indray, efa ataon'ny GitHub Actions
+npmRebuild: false
 
 files:
   - dist/**/*
   - electron/**/*
   - package.json
   - .env
-  - "!**/*.js.map"             # Manala ny source maps fotsiny.
+  - "!**/*.js.map"
   - "!**/node_modules/.cache/**"
 
 asar: true
@@ -25,18 +25,15 @@ asarUnpack:
 
 win:
   target:
-    - portable                # Mamorona Portable EXE (tsindrio indroa fotsiny)
-    - nsis                     # ⭐ Ampio ity mba hamorona Installer EXE koa
+    - nsis                     # ⭐ NSIS Installer ihany (tsy misy portable)
   icon: public/logo.ico
 
-# ⭐ Configuration ho an'ny Installer (NSIS) 
 nsis:
-  oneClick: false              # Tsy mipetaka indray mandeha, mamela ny mpampiasa hisafidy
-  allowToChangeInstallationDirectory: true  # Mamela ny mpampiasa hanova ny toerana ametrahana
+  oneClick: false
+  allowToChangeInstallationDirectory: true
 
 linux:
   target:
-    - AppImage
-    - deb
+    - deb                      # ⭐ .deb ihany (tsy misy AppImage)
   category: Office
   icon: public/logo.png
