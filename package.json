@@ -5,7 +5,7 @@
   "type": "module",
   "main": "electron/main.cjs",
   "description": "ERP de gestion de stock professionnel",
-  "author": "Life's Art ERP",
+  "author": "Life's Art ERP <sdrrakt@gmail.com>",
   "license": "PROPRIETARY",
   "repository": {
     "type": "git",
