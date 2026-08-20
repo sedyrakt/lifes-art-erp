@@ -4,7 +4,7 @@ appId: com.lifesart.app
 productName: lifes-art
 directories:
   output: release
-compression: normal          # Mampiasa 'normal' mba tsy ho tara loatra ao amin'ny GitHub Actions
+compression: normal
 npmRebuild: true
 
 files:
@@ -12,7 +12,7 @@ files:
   - electron/**/*
   - package.json
   - .env
-  - "!**/*.js.map"            # Manala ny source maps ihany, tsy manala ny fichiers hafa rehetra
+  - "!**/*.js.map"
   - "!**/node_modules/.cache/**"
 
 extraResources:
@@ -29,10 +29,9 @@ asarUnpack:
 
 win:
   target:
-    - portable                # Mamorona Portable EXE ihany. Raha tiana installer koa dia ampidiro "- nsis"
-  icon: public/logo.ico       # Tsarovy ho .ico ny endriky ny sary
+    - portable
+  icon: public/logo.ico
 
-# Raha manisy NSIS ianao dia afaka ampiasaina ity:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -42,8 +41,4 @@ linux:
     - AppImage
     - deb
   category: Office
-  icon: public/logo.png       # Ho an'ny Linux dia .png no ampiasaina
-
-mac:
-  target: dmg
-  icon: public/logo.icns      # Raha mac ianao dia .icns ilaina
+  icon: public/logo.png

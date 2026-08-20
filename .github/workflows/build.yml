@@ -1,43 +1,39 @@
 # ============================================================
-# .github/workflows/build.yml
-# ============================================================
-# LIFE'S ART - ELECTRON DESKTOP BUILD
-#
-# Generates:
-#   Windows  -> Portable EXE
-#   Linux    -> AppImage + DEB
-#
-# Artifacts:
-#   lifes-art-win64
-#   lifes-art-linux
+# LIFE'S ART ERP
+# GitHub Actions - Windows + Linux (Fully Optimized)
 # ============================================================
 
-name: Build Windows EXE & Linux DEB
+name: Build & Release
 
 # ============================================================
 # TRIGGERS
 # ============================================================
+
 on:
   push:
     branches:
       - main
-
+    tags:
+      - "v*"
   workflow_dispatch:
 
 # ============================================================
-# GLOBAL ENVIRONMENT
+# PERMISSIONS
 # ============================================================
-env:
-  NODE_VERSION: 20
+
+permissions:
+  contents: read
 
 # ============================================================
 # JOBS
 # ============================================================
+
 jobs:
 
   # ==========================================================
-  # WINDOWS BUILD
+  # WINDOWS
   # ==========================================================
+
   build-windows:
 
     name: Build Windows Portable EXE
@@ -46,127 +42,156 @@ jobs:
 
     steps:
 
-      # ========================================================
-      # 1. CHECKOUT SOURCE CODE
-      # ========================================================
+      # ------------------------------------------------------
+      # CHECKOUT
+      # ------------------------------------------------------
+
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
+      # ------------------------------------------------------
+      # NODE.JS
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 2. SETUP NODE.JS
-      # ========================================================
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: 20
           cache: npm
 
+      # ------------------------------------------------------
+      # GET VERSION
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 3. INSTALL DEPENDENCIES
-      # ========================================================
+      - name: Get application version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          Write-Host "Application version: $version"
+          "VERSION=$version" >> $env:GITHUB_ENV
+
+      # ------------------------------------------------------
+      # CACHE ELECTRON
+      # ------------------------------------------------------
+
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.electron
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      # ------------------------------------------------------
+      # INSTALL DEPENDENCIES
+      # ------------------------------------------------------
+
       - name: Install dependencies
         run: npm ci
 
+      # ------------------------------------------------------
+      # REBUILD NATIVE MODULES
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 4. BUILD VITE FRONTEND
-      # ========================================================
-      - name: Build Vite frontend
-        run: npm run build
+      - name: Rebuild native modules (better-sqlite3)
+        run: npx electron-rebuild -f -w better-sqlite3
 
+      # ------------------------------------------------------
+      # BUILD & OBFUSCATE FRONTEND (Build:prod)
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 5. BUILD WINDOWS PORTABLE EXE
-      # ========================================================
-      #
-      # IMPORTANT:
-      #
-      # We intentionally DO NOT use:
-      #
-      #   --dir
-      #
-      # because --dir creates an unpacked directory and
-      # does NOT generate a portable .exe.
-      #
-      # "portable" generates a real Windows executable.
-      #
-      # ========================================================
+      - name: Build secure frontend (Build, Obfuscate, Compile)
+        run: npm run build:prod
+
+      # ------------------------------------------------------
+      # BUILD WINDOWS
+      # ------------------------------------------------------
+
       - name: Build Windows Portable EXE
-        run: npx electron-builder --win portable --x64 --publish=never
+        run: npx electron-builder --win portable --x64 --config electron-builder.yml --publish=never
 
+      # ------------------------------------------------------
+      # SHOW OUTPUT
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 6. DISPLAY RELEASE FILES
-      # ========================================================
-      #
-      # This makes debugging much easier if electron-builder
-      # changes the generated filename.
-      #
-      # ========================================================
-      - name: List Windows release files
-        shell: powershell
+      - name: Show Windows output
+        shell: pwsh
         run: |
           Write-Host ""
-          Write-Host "========================================"
-          Write-Host " WINDOWS RELEASE DIRECTORY"
-          Write-Host "========================================"
-          Write-Host ""
+          Write-Host "=========================================="
+          Write-Host " WINDOWS BUILD OUTPUT"
+          Write-Host "=========================================="
 
-          if (Test-Path "release") {
-
-            Get-ChildItem "release" -Recurse |
-              Select-Object FullName, Length
-
-          } else {
-
-            Write-Host "ERROR: release directory was not found."
+          if (!(Test-Path "release")) {
+            Write-Host "ERROR: release directory does not exist."
             exit 1
-
           }
 
+          Get-ChildItem release -Recurse -File | Select-Object FullName, Length
 
-      # ========================================================
-      # 7. VERIFY WINDOWS EXE
-      # ========================================================
+      # ------------------------------------------------------
+      # VERIFY EXE
+      # ------------------------------------------------------
+
       - name: Verify Windows EXE
-        shell: powershell
+        shell: pwsh
         run: |
-          $exeFiles = Get-ChildItem "release" -Filter "*.exe" -File -ErrorAction SilentlyContinue
+          $files = Get-ChildItem release -File -Filter "*.exe"
 
-          if ($null -eq $exeFiles -or $exeFiles.Count -eq 0) {
-
-            Write-Host ""
-            Write-Host "ERROR: No Windows EXE was generated."
-            Write-Host ""
-            Write-Host "Files currently inside release:"
-            Get-ChildItem "release" -Recurse
+          if ($files.Count -eq 0) {
+            Write-Host "ERROR: No Windows EXE found."
             exit 1
-
           }
 
           Write-Host ""
-          Write-Host "Windows EXE found:"
-          $exeFiles | ForEach-Object {
+          Write-Host "Windows EXE Found:"
+          $files | ForEach-Object {
             Write-Host $_.FullName
           }
 
+      # ------------------------------------------------------
+      # RENAME EXE
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 8. UPLOAD WINDOWS EXE
-      # ========================================================
-      - name: Upload Windows EXE
+      - name: Rename Windows EXE
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem release -File -Filter "*.exe"
+
+          foreach ($file in $files) {
+
+            $newName = "lifes-art-$env:VERSION-win64.exe"
+
+            Write-Host "Renaming:"
+            Write-Host "$($file.Name)"
+            Write-Host "to"
+            Write-Host "$newName"
+
+            Rename-Item `
+              -Path $file.FullName `
+              -NewName $newName `
+              -Force
+          }
+
+      # ------------------------------------------------------
+      # UPLOAD WINDOWS ARTIFACT
+      # ------------------------------------------------------
+
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lifes-art-win64
+          name: lifes-art-win64-v${{ env.VERSION }}
           path: release/*.exe
           if-no-files-found: error
 
 
   # ==========================================================
-  # LINUX BUILD
+  # LINUX
   # ==========================================================
+
   build-linux:
 
     name: Build Linux AppImage & DEB
@@ -175,130 +200,168 @@ jobs:
 
     steps:
 
-      # ========================================================
-      # 1. CHECKOUT SOURCE CODE
-      # ========================================================
+      # ------------------------------------------------------
+      # CHECKOUT
+      # ------------------------------------------------------
+
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
+      # ------------------------------------------------------
+      # NODE.JS
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 2. SETUP NODE.JS
-      # ========================================================
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: 20
           cache: npm
 
+      # ------------------------------------------------------
+      # GET VERSION
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 3. INSTALL DEPENDENCIES
-      # ========================================================
+      - name: Get application version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Application version: $VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      # ------------------------------------------------------
+      # CACHE ELECTRON
+      # ------------------------------------------------------
+
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.electron
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      # ------------------------------------------------------
+      # INSTALL DEPENDENCIES
+      # ------------------------------------------------------
+
       - name: Install dependencies
         run: npm ci
 
+      # ------------------------------------------------------
+      # REBUILD NATIVE MODULES
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 4. BUILD VITE FRONTEND
-      # ========================================================
-      - name: Build Vite frontend
-        run: npm run build
+      - name: Rebuild native modules (better-sqlite3)
+        run: npx electron-rebuild -f -w better-sqlite3
 
+      # ------------------------------------------------------
+      # BUILD & OBFUSCATE FRONTEND (Build:prod)
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 5. BUILD LINUX APPIMAGE + DEB
-      # ========================================================
-      #
-      # Generates:
-      #
-      #   *.AppImage
-      #   *.deb
-      #
-      # ========================================================
+      - name: Build secure frontend (Build, Obfuscate, Compile)
+        run: npm run build:prod
+
+      # ------------------------------------------------------
+      # BUILD LINUX
+      # ------------------------------------------------------
+
       - name: Build Linux AppImage & DEB
-        run: npx electron-builder --linux AppImage deb --x64 --publish=never
+        run: npx electron-builder --linux AppImage deb --x64 --config electron-builder.yml --publish=never
 
+      # ------------------------------------------------------
+      # SHOW OUTPUT
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 6. DISPLAY RELEASE FILES
-      # ========================================================
-      - name: List Linux release files
+      - name: Show Linux output
         shell: bash
         run: |
           echo ""
-          echo "========================================"
-          echo " LINUX RELEASE DIRECTORY"
-          echo "========================================"
-          echo ""
+          echo "=========================================="
+          echo " LINUX BUILD OUTPUT"
+          echo "=========================================="
 
-          if [ -d "release" ]; then
-
-            find release -maxdepth 2 -type f -printf '%p\n'
-
-          else
-
-            echo "ERROR: release directory was not found."
+          if [ ! -d "release" ]; then
+            echo "ERROR: release directory does not exist."
             exit 1
-
           fi
 
+          find release -maxdepth 1 -type f -print
 
-      # ========================================================
-      # 7. VERIFY APPIMAGE
-      # ========================================================
+      # ------------------------------------------------------
+      # VERIFY APPIMAGE
+      # ------------------------------------------------------
+
       - name: Verify AppImage
         shell: bash
         run: |
-          APPIMAGE_COUNT=$(find release -maxdepth 1 -type f -name "*.AppImage" | wc -l)
+          COUNT=$(find release -maxdepth 1 -type f -name "*.AppImage" | wc -l)
 
-          if [ "$APPIMAGE_COUNT" -eq 0 ]; then
+          echo "AppImage count: $COUNT"
 
-            echo ""
-            echo "ERROR: No AppImage was generated."
-            echo ""
-            echo "Files currently inside release:"
-            find release -maxdepth 2 -type f
+          if [ "$COUNT" -eq 0 ]; then
+            echo "ERROR: AppImage not found."
             exit 1
-
           fi
 
-          echo ""
-          echo "AppImage found:"
-          find release -maxdepth 1 -type f -name "*.AppImage"
+      # ------------------------------------------------------
+      # VERIFY DEB
+      # ------------------------------------------------------
 
-
-      # ========================================================
-      # 8. VERIFY DEB
-      # ========================================================
       - name: Verify DEB
         shell: bash
         run: |
-          DEB_COUNT=$(find release -maxdepth 1 -type f -name "*.deb" | wc -l)
+          COUNT=$(find release -maxdepth 1 -type f -name "*.deb" | wc -l)
 
-          if [ "$DEB_COUNT" -eq 0 ]; then
+          echo "DEB count: $COUNT"
 
-            echo ""
-            echo "ERROR: No DEB package was generated."
-            echo ""
-            echo "Files currently inside release:"
-            find release -maxdepth 2 -type f
+          if [ "$COUNT" -eq 0 ]; then
+            echo "ERROR: DEB package not found."
             exit 1
-
           fi
 
+      # ------------------------------------------------------
+      # RENAME LINUX FILES
+      # ------------------------------------------------------
+
+      - name: Rename Linux artifacts
+        shell: bash
+        run: |
+          for file in release/*.AppImage; do
+            if [ -f "$file" ]; then
+              mv "$file" "release/lifes-art-$VERSION-linux-x64.AppImage"
+            fi
+          done
+
+          for file in release/*.deb; do
+            if [ -f "$file" ]; then
+              mv "$file" "release/lifes-art-$VERSION-linux-x64.deb"
+            fi
+          done
+
+      # ------------------------------------------------------
+      # SHOW FINAL ARTIFACTS
+      # ------------------------------------------------------
+
+      - name: Show final Linux artifacts
+        shell: bash
+        run: |
           echo ""
-          echo "DEB package found:"
-          find release -maxdepth 1 -type f -name "*.deb"
+          echo "=========================================="
+          echo " FINAL LINUX ARTIFACTS"
+          echo "=========================================="
+          ls -lah release/
 
+      # ------------------------------------------------------
+      # UPLOAD LINUX ARTIFACTS
+      # ------------------------------------------------------
 
-      # ========================================================
-      # 9. UPLOAD LINUX ARTIFACTS
-      # ========================================================
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: lifes-art-linux
+          name: lifes-art-linux-v${{ env.VERSION }}
           path: |
             release/*.AppImage
             release/*.deb
