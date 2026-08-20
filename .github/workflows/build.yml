@@ -36,7 +36,7 @@ jobs:
 
   build-windows:
 
-    name: Build Windows Portable EXE
+    name: Build Windows Portable & Installer EXE
 
     runs-on: windows-latest
 
@@ -110,8 +110,8 @@ jobs:
       # BUILD WINDOWS
       # ------------------------------------------------------
 
-      - name: Build Windows Portable EXE
-        run: npx electron-builder --win portable --x64 --config electron-builder.yml --publish=never
+      - name: Build Windows Portable & Installer EXE
+        run: npx electron-builder --win --x64 --config electron-builder.yml --publish=never
 
       # ------------------------------------------------------
       # SHOW OUTPUT
