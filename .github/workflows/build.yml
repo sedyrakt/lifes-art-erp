@@ -1,200 +1,10 @@
-# ============================================================
-# LIFE'S ART ERP
-# GitHub Actions - Windows + Linux (Fully Optimized)
-# ============================================================
-
-name: Build & Release
-
-# ============================================================
-# TRIGGERS
-# ============================================================
-
-on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
-  workflow_dispatch:
-
-# ============================================================
-# PERMISSIONS
-# ============================================================
-
-permissions:
-  contents: read
-
-# ============================================================
-# JOBS
-# ============================================================
-
-jobs:
-
   # ==========================================================
-  # WINDOWS
-  # ==========================================================
-
-  build-windows:
-
-    name: Build Windows Portable & Installer EXE
-
-    runs-on: windows-latest
-
-    steps:
-
-      # ------------------------------------------------------
-      # CHECKOUT
-      # ------------------------------------------------------
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # ------------------------------------------------------
-      # NODE.JS
-      # ------------------------------------------------------
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      # ------------------------------------------------------
-      # GET VERSION
-      # ------------------------------------------------------
-
-      - name: Get application version
-        shell: pwsh
-        run: |
-          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          Write-Host "Application version: $version"
-          "VERSION=$version" >> $env:GITHUB_ENV
-
-      # ------------------------------------------------------
-      # CACHE ELECTRON
-      # ------------------------------------------------------
-
-      - name: Cache Electron
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.electron
-            ~/.cache/electron
-            ~/.cache/electron-builder
-          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-
-
-      # ------------------------------------------------------
-      # INSTALL DEPENDENCIES
-      # ------------------------------------------------------
-
-      - name: Install dependencies
-        run: npm ci
-
-      # ------------------------------------------------------
-      # REBUILD NATIVE MODULES
-      # ------------------------------------------------------
-
-      - name: Rebuild native modules (better-sqlite3)
-        run: npx electron-rebuild -f -w better-sqlite3
-
-      # ------------------------------------------------------
-      # BUILD & OBFUSCATE FRONTEND (Build:prod)
-      # ------------------------------------------------------
-
-      - name: Build secure frontend (Build, Obfuscate, Compile)
-        run: npm run build:prod
-
-      # ------------------------------------------------------
-      # BUILD WINDOWS
-      # ------------------------------------------------------
-
-      - name: Build Windows Portable & Installer EXE
-        run: npx electron-builder --win --x64 --config electron-builder.yml --publish=never
-
-      # ------------------------------------------------------
-      # SHOW OUTPUT
-      # ------------------------------------------------------
-
-      - name: Show Windows output
-        shell: pwsh
-        run: |
-          Write-Host ""
-          Write-Host "=========================================="
-          Write-Host " WINDOWS BUILD OUTPUT"
-          Write-Host "=========================================="
-
-          if (!(Test-Path "release")) {
-            Write-Host "ERROR: release directory does not exist."
-            exit 1
-          }
-
-          Get-ChildItem release -Recurse -File | Select-Object FullName, Length
-
-      # ------------------------------------------------------
-      # VERIFY EXE
-      # ------------------------------------------------------
-
-      - name: Verify Windows EXE
-        shell: pwsh
-        run: |
-          $files = Get-ChildItem release -File -Filter "*.exe"
-
-          if ($files.Count -eq 0) {
-            Write-Host "ERROR: No Windows EXE found."
-            exit 1
-          }
-
-          Write-Host ""
-          Write-Host "Windows EXE Found:"
-          $files | ForEach-Object {
-            Write-Host $_.FullName
-          }
-
-      # ------------------------------------------------------
-      # RENAME EXE
-      # ------------------------------------------------------
-
-      - name: Rename Windows EXE
-        shell: pwsh
-        run: |
-          $files = Get-ChildItem release -File -Filter "*.exe"
-
-          foreach ($file in $files) {
-
-            $newName = "lifes-art-$env:VERSION-win64.exe"
-
-            Write-Host "Renaming:"
-            Write-Host "$($file.Name)"
-            Write-Host "to"
-            Write-Host "$newName"
-
-            Rename-Item `
-              -Path $file.FullName `
-              -NewName $newName `
-              -Force
-          }
-
-      # ------------------------------------------------------
-      # UPLOAD WINDOWS ARTIFACT
-      # ------------------------------------------------------
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lifes-art-win64-v${{ env.VERSION }}
-          path: release/*.exe
-          if-no-files-found: error
-
-
-  # ==========================================================
-  # LINUX
+  # LINUX (Deb only)
   # ==========================================================
 
   build-linux:
 
-    name: Build Linux AppImage & DEB
+    name: Build Linux DEB Package
 
     runs-on: ubuntu-latest
 
@@ -265,11 +75,11 @@ jobs:
         run: npm run build:prod
 
       # ------------------------------------------------------
-      # BUILD LINUX
+      # BUILD LINUX (deb only)
       # ------------------------------------------------------
 
-      - name: Build Linux AppImage & DEB
-        run: npx electron-builder --linux AppImage deb --x64 --config electron-builder.yml --publish=never
+      - name: Build Linux DEB
+        run: npx electron-builder --linux deb --x64 --config electron-builder.yml --publish=never
 
       # ------------------------------------------------------
       # SHOW OUTPUT
@@ -291,23 +101,7 @@ jobs:
           find release -maxdepth 1 -type f -print
 
       # ------------------------------------------------------
-      # VERIFY APPIMAGE
-      # ------------------------------------------------------
-
-      - name: Verify AppImage
-        shell: bash
-        run: |
-          COUNT=$(find release -maxdepth 1 -type f -name "*.AppImage" | wc -l)
-
-          echo "AppImage count: $COUNT"
-
-          if [ "$COUNT" -eq 0 ]; then
-            echo "ERROR: AppImage not found."
-            exit 1
-          fi
-
-      # ------------------------------------------------------
-      # VERIFY DEB
+      # VERIFY DEB (AppImage check n'esorina)
       # ------------------------------------------------------
 
       - name: Verify DEB
@@ -323,18 +117,12 @@ jobs:
           fi
 
       # ------------------------------------------------------
-      # RENAME LINUX FILES
+      # RENAME LINUX DEB
       # ------------------------------------------------------
 
-      - name: Rename Linux artifacts
+      - name: Rename Linux DEB
         shell: bash
         run: |
-          for file in release/*.AppImage; do
-            if [ -f "$file" ]; then
-              mv "$file" "release/lifes-art-$VERSION-linux-x64.AppImage"
-            fi
-          done
-
           for file in release/*.deb; do
             if [ -f "$file" ]; then
               mv "$file" "release/lifes-art-$VERSION-linux-x64.deb"
@@ -362,7 +150,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lifes-art-linux-v${{ env.VERSION }}
-          path: |
-            release/*.AppImage
-            release/*.deb
+          path: release/*.deb
           if-no-files-found: error
