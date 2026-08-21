@@ -33,19 +33,19 @@ declare global {
           daysRemaining?: number;
           minutesRemaining?: number;
           isTest?: boolean;
-          isLifetime?: boolean;      // ⭐ FANITSARA: nampiana
-          status?: string;           // ⭐ FANITSARA: nampiana ('active', 'grace', 'expired', 'lifetime')
-          signature?: string;        // ⭐ FANITSARA: nampiana
-          licenseKey?: string;       // ⭐ FANITSARA: nampiana
+          isLifetime?: boolean;
+          status?: string;
+          signature?: string;
+          licenseKey?: string;
           activationId?: string;
           packageType?: string;
-          expirationDate?: string;   // ⭐ FANITSARA: nampiana
+          expirationDate?: string;
           data?: string;
           path?: string;
         }>;
-        getPath: () => Promise<{ success: boolean; path?: string }>;  // ⭐ FANITSARA
-        getStatusCode: () => Promise<{ success: boolean; code?: number }>;  // ⭐ FANITSARA
-        validate: (context?: string) => Promise<{ success: boolean; valid?: boolean; message?: string; code?: number }>;  // ⭐ FANITSARA
+        getPath: () => Promise<{ success: boolean; path?: string }>;
+        getStatusCode: () => Promise<{ success: boolean; code?: number }>;
+        validate: (context?: string) => Promise<{ success: boolean; valid?: boolean; message?: string; code?: number }>;
         verify: (licenseKey?: string, signature?: string, payload?: any) => Promise<{
           success: boolean;
           valid: boolean;
@@ -73,9 +73,9 @@ declare global {
           machineId?: string;
           activationId?: string;
           packageType?: string;
-          signature?: string;         // ⭐ FANITSARA: nampiana
-          expirationDate?: string;    // ⭐ FANITSARA: nampiana
-          daysRemaining?: number;     // ⭐ FANITSARA: nampiana
+          signature?: string;
+          expirationDate?: string;
+          daysRemaining?: number;
         }>;
         verifyChecksum: (licenseKey: string) => Promise<{ success: boolean; valid: boolean }>;
         getPackages: () => Promise<{
@@ -92,21 +92,6 @@ declare global {
             isTest?: boolean;
             isLifetime?: boolean;
           }>;
-          message?: string;
-        }>;
-        securityCheck: () => Promise<{
-          success: boolean;
-          secure: boolean;
-          debuggerDetected?: boolean;
-          integrityOk?: boolean;
-          hashesOk?: boolean;
-          devToolsOk?: boolean;
-          clockOk?: boolean;
-          message?: string;
-        }>;
-        getIntegrityHashes: () => Promise<{
-          success: boolean;
-          data?: { hashes: Record<string, string>; metadata: any };
           message?: string;
         }>;
         getCurrent: () => Promise<{ success: boolean; data?: any; message?: string }>;

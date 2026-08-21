@@ -1,7 +1,16 @@
+// ============================================================
+// electron/ipc/products.cjs - IPC HANDLERS PRODUITS
+// ⭐ FANITSARA VAOVAO: Production Safe (Hardcoded DEBUG)
+// ⭐ FIX: Mamerina `true` mba tsy hiteraka ilay "function returned false"
+// ============================================================
+
 const { getDb } = require('../../database/connection.cjs');
 const { logAudit } = require('./audit.cjs');
 const { log, error } = require('./logger.cjs');
 const { buildProductsQuery, buildProductsCountQuery } = require('./queries.cjs');
+
+// ⭐ FANITSARA: Hardcoded ny DEBUG mba tsy hiankina amin'ny process.env.NODE_ENV
+const DEBUG = false;
 
 function normalizeId(value) { const id = Number.parseInt(value, 10); return (Number.isInteger(id) && id > 0) ? id : null; }
 function numberOr(value, fallback = 0) { const n = Number(value); return Number.isFinite(n) ? n : fallback; }
@@ -12,7 +21,7 @@ function withDbCheck(fn) { return (event, ...args) => { const db = getDb(); if (
 function emitProductsChanged(productData) { try { const { BrowserWindow } = require('electron'); const windows = BrowserWindow.getAllWindows(); if (!windows.length) return; for (const win of windows) { if (!win || win.isDestroyed()) continue; try { win.webContents.send('products:changed', productData); } catch (err) {} } } catch (err) {} }
 
 function registerProductsHandlers(ipcMain) {
-  if (process.env.NODE_ENV === 'development') log('🔥 REGISTER PRODUCTS HANDLERS');
+  if (DEBUG) log('🔥 REGISTER PRODUCTS HANDLERS');
   if (!ipcMain) throw new Error('ipcMain est null/undefined');
 
   const channels = ['products:get-all','products:get-by-id','products:get-by-code','products:create','products:update','products:delete','products:get-alertes','products:get-top','products:get-by-categorie','products:search','products:update-stock','products:get-stats','products:bulk-update-status','products:bulk-delete'];
@@ -22,7 +31,7 @@ function registerProductsHandlers(ipcMain) {
     const dataQuery = buildProductsQuery(options); const countQuery = buildProductsCountQuery(options);
     const data = db.prepare(dataQuery.query).all(...dataQuery.params); const totalRow = db.prepare(countQuery.query).get(...countQuery.params);
     const total = totalRow?.total || 0; const totalPages = Math.ceil(total / dataQuery.limit);
-    if (process.env.NODE_ENV === 'development') log(`📦 Products pagination | page=${dataQuery.page} | limit=${dataQuery.limit} | total=${total} | totalPages=${totalPages} | returned=${data.length}`);
+    if (DEBUG) log(`📦 Products pagination | page=${dataQuery.page} | limit=${dataQuery.limit} | total=${total} | totalPages=${totalPages} | returned=${data.length}`);
     return { success: true, data, pagination: { total, totalPages, page: dataQuery.page, limit: dataQuery.limit, offset: dataQuery.offset, hasNextPage: dataQuery.page < totalPages, hasPreviousPage: dataQuery.page > 1 } };
   }));
 
@@ -82,7 +91,7 @@ function registerProductsHandlers(ipcMain) {
   ipcMain.handle('products:bulk-update-status', withDbCheck((db, event, ids, newStatus) => { if (!Array.isArray(ids) || ids.length === 0) return { success: false, error: 'Aucun produit sélectionné' }; if (newStatus !== 'actif' && newStatus !== 'inactif') return { success: false, error: 'Statut invalide' }; const validIds = [...new Set(ids.map(normalizeId).filter(Boolean))].slice(0, 500); if (!validIds.length) return { success: false, error: 'Liste d\'IDs invalide' }; const placeholders = validIds.map(() => '?').join(','); const stmt = db.prepare(`UPDATE produits SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`); const result = db.transaction(() => stmt.run(newStatus, ...validIds))(); return { success: true, changes: result.changes }; }));
   ipcMain.handle('products:bulk-delete', withDbCheck((db, event, ids) => { if (!Array.isArray(ids) || ids.length === 0) return { success: false, error: 'Aucun produit sélectionné' }; const validIds = [...new Set(ids.map(normalizeId).filter(Boolean))].slice(0, 500); if (!validIds.length) return { success: false, error: 'Liste d\'IDs invalide' }; const placeholders = validIds.map(() => '?').join(','); const stmt = db.prepare(`UPDATE produits SET status = 'inactif', updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`); const result = db.transaction(() => stmt.run(...validIds))(); return { success: true, changes: result.changes }; }));
 
-  if (process.env.NODE_ENV === 'development') log('✅ Products handlers enregistrés avec succès');
+  if (DEBUG) log('✅ Products handlers enregistrés avec succès');
   return true; // ⭐ FIX: Mamerina true
 }
 

@@ -1,5 +1,9 @@
-// logger.cjs
-const DEBUG = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+// electron/ipc/employes/logger.cjs
+// ============================================================
+// ⭐ FANITSARA: Hardcoded ny DEBUG mba tsy hiankina amin'ny process.env.NODE_ENV
+// ============================================================
+
+const DEBUG = false;
 
 function log(...args) {
   if (DEBUG) console.log('[👷 employes]', ...args);

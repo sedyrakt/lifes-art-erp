@@ -219,6 +219,20 @@ function ensureTables() {
       );
     `);
 
+    // ⭐ NOUVEAU: SECURITY LOGS (mifanaraka amin'ny logger.cjs)
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS security_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT,
+        action TEXT,
+        ip TEXT,
+        userAgent TEXT,
+        status INTEGER,
+        details TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // ---------- ENTREES STOCK ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS entrees_stock (

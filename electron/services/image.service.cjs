@@ -1,6 +1,7 @@
 // ============================================================
 // electron/services/image.service.cjs - CORRIGÉ (TSY MILA DB)
 // ⭐ Tsy misy require('database/...') intsony
+// ⭐ Production Safe (Hardcoded constants)
 // ============================================================
 'use strict';
 
@@ -8,15 +9,20 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const DEBUG = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+// ⭐ FANITSARA: Hardcoded ny DEBUG mba tsy hiankina amin'ny process.env.NODE_ENV
+const DEBUG = false;
+
 function log(...args) { if (DEBUG) console.log(...args); }
 function error(...args) { console.error(...args); }
 
-const MAX_SIZE_MB = parseInt(process.env.UPLOAD_MAX_SIZE_MB) || 10;
+// ⭐ FANITSARA: Hardcoded ny MAX_SIZE_MB mba tsy hiankina amin'ny process.env
+const MAX_SIZE_MB = 10;
 const MAX_IMAGE_SIZE = MAX_SIZE_MB * 1024 * 1024;
 
-// ⭐ Ampiasao ny app.getPath raha tsy misy process.env.USER_DATA
-const UPLOADS_DIR = path.join(process.env.USER_DATA || require('electron').app.getPath('userData'), 'uploads');
+// ⭐ FANITSARA: Mampiasa app.getPath('userData') mivantana fa tsy process.env.USER_DATA
+const { app } = require('electron');
+const UPLOADS_DIR = path.join(app.getPath('userData'), 'uploads');
+
 const SUB_FOLDERS = Object.freeze(['produits', 'categories', 'clients', 'employes', 'fournisseurs', 'utilisateurs', 'company']);
 
 function ensureDirectories() {

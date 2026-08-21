@@ -7,7 +7,9 @@
 
 const { getDb } = require('../database/connection.cjs');
 
-const DEBUG = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+// ⭐ FANITSARA: Hardcoded ny DEBUG mba tsy hiankina amin'ny process.env.NODE_ENV
+const DEBUG = false;
+
 function log(...args) { if (DEBUG) console.log('[📦 payments]', ...args); }
 function error(...args) { console.error('[❌ payments]', ...args); }
 
@@ -144,6 +146,7 @@ const registerPaymentsHandlers = (ipcMain) => {
       return { success: true, data: stmt.all(parseInt(employeId)) };
     } catch (err) { error('❌ [payments:get-by-employe]', err.message); return { success: false, error: err.message }; }
   }));
+
   ipcMain.handle('payments:get-by-period', withLiveDb((db, mois, annee) => {
     try {
       if (!mois || !annee) return { success: false, error: 'Mois et année requis' };
@@ -151,6 +154,7 @@ const registerPaymentsHandlers = (ipcMain) => {
       return { success: true, data: stmt.all(parseInt(mois), parseInt(annee)) };
     } catch (err) { error('❌ [payments:get-by-period]', err.message); return { success: false, error: err.message }; }
   }));
+
   ipcMain.handle('payments:get-historique', withLiveDb((db, employeId, mois, annee) => {
     try {
       if (!employeId || isNaN(employeId) || parseInt(employeId) <= 0) return { success: false, error: 'ID employé requis' };
@@ -161,6 +165,7 @@ const registerPaymentsHandlers = (ipcMain) => {
       else { stmt = db.prepare(`SELECT p.*, e.nom as employe_nom, e.poste as employe_poste, e.salaire as salaire_base FROM paiements_employes p LEFT JOIN employes e ON p.employe_id = e.id WHERE p.employe_id = ? ORDER BY p.annee DESC, p.mois DESC`); return { success: true, data: stmt.all(empId) }; }
     } catch (err) { error('❌ [payments:get-historique]', err.message); return { success: false, error: err.message }; }
   }));
+
   ipcMain.handle('payments:get-salaire-mensuel', withLiveDb((db, employeId, mois, annee) => {
     try {
       if (!employeId || !mois || !annee) return { success: false, error: 'Données manquantes' };
@@ -169,12 +174,14 @@ const registerPaymentsHandlers = (ipcMain) => {
       return { success: true, data: result?.total || 0 };
     } catch (err) { error('❌ [payments:get-salaire-mensuel]', err.message); return { success: false, error: err.message }; }
   }));
+
   ipcMain.handle('payments:get-stats', withLiveDb((db) => {
     try {
       const stmt = db.prepare(`SELECT COUNT(*) as total_paiements, SUM(montant) as total_montant, AVG(montant) as moyenne, MAX(montant) as max_montant, MIN(montant) as min_montant, COUNT(DISTINCT employe_id) as employes FROM paiements_employes`);
       return { success: true, data: stmt.get() };
     } catch (err) { error('❌ [payments:get-stats]', err.message); return { success: false, error: err.message }; }
   }));
+
   ipcMain.handle('payments:count-by-employe', withLiveDb((db, employeId) => {
     try {
       if (!employeId || isNaN(employeId) || parseInt(employeId) <= 0) return { success: false, error: 'ID employé invalide' };
@@ -182,6 +189,7 @@ const registerPaymentsHandlers = (ipcMain) => {
       return { success: true, data: result?.count || 0 };
     } catch (err) { error('❌ [payments:count-by-employe]', err.message); return { success: false, error: err.message }; }
   }));
+
   ipcMain.handle('payments:get-employe-stats', withLiveDb((db, employeId) => {
     try {
       if (!employeId || isNaN(employeId) || parseInt(employeId) <= 0) return { success: false, error: 'ID employé invalide' };

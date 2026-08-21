@@ -8,8 +8,6 @@
 // ⭐ FANITSARA VAOVAO: Fanamarinana table security_logs
 // ============================================================
 
-require('dotenv').config();
-
 const fs = require('fs');
 const path = require('path');
 const { runQuery } = require('../database/queries.cjs');
@@ -17,12 +15,12 @@ const { normalizeParam } = require('../database/utils.cjs');
 const { getDb } = require('../database/connection.cjs');
 
 // ============================================================
-// CONSTANTES
+// CONSTANTES (Production Safe - Hardcoded)
 // ============================================================
-const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
-const LOG_FILE = process.env.LOG_FILE || './logs/app.log';
+const LOG_LEVEL = 'info';
+const LOG_FILE = './logs/app.log';
 const LOG_DIR = path.dirname(LOG_FILE);
-const LOG_QUEUE_SIZE = parseInt(process.env.LOG_QUEUE_SIZE) || 100;
+const LOG_QUEUE_SIZE = 100;
 
 // ============================================================
 // CREER DOSSIER LOGS

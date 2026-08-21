@@ -44,7 +44,7 @@ const ParametresBackup: React.FC<ParametresBackupProps> = ({ isDark }) => {
     setRestoreLoading(true);
     try {
       const restoreResult = await window.api.backup.restore(restorePath);
-      if (restoreResult?.success) { showSuccess('✅ Restauration réussie', 'La base de données a été restaurée avec succès.'); await loadBackupStatus(); }
+      if (restoreResult?.success) { showSuccess('Restauration réussie', 'La base de données a été restaurée avec succès.'); await loadBackupStatus(); }
       else throw new Error(restoreResult?.error || 'Échec de la restauration');
     } catch (error: any) { showError('❌ Erreur de restauration', error.message || 'Impossible de restaurer la base de données.'); }
     finally { setRestoreLoading(false); }

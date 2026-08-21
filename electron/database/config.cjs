@@ -1,7 +1,7 @@
 // ============================================================
 // database/config.cjs - CONSTANTS (CommonJS)
 // ⭐ LIFE'S ART ERP PRO
-// ⭐ Version nettoyée - Sans License
+// ⭐ Version "Production Safe" - Hardcoded, tsy miankina amin'ny .env
 // ============================================================
 
 const path = require('path');
@@ -10,59 +10,42 @@ const path = require('path');
 // ⭐ DEBUG MODE
 // ============================================================
 
-const DEBUG =
-  !process.env.NODE_ENV ||
-  process.env.NODE_ENV === 'development';
+// ⭐ FANITSARA: Raha vita ny build dia tsy ho development intsony
+const DEBUG = false;
 
 // ============================================================
 // ⭐ IS PACKAGED
 // ============================================================
 
-const isPackaged =
-  process.env.NODE_ENV === 'production' ||
-  process.defaultApp === false;
+const isPackaged = true;
 
 // ============================================================
 // ⭐ CONSTANTES GÉNÉRALES
 // ============================================================
 
-const SALT_ROUNDS =
-  parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 12;
+// ⭐ FANITSARA: Hardcoded mba tsy ho very rehefa packaged
+const SALT_ROUNDS = 12;
 
-const BACKUP_DIR =
-  process.env.DB_BACKUP_PATH ||
-  path.join(__dirname, 'backups');
+// ⭐ FANITSARA: Ampiasaina mivantana ny dossier backups
+const BACKUP_DIR = path.join(__dirname, 'backups');
 
 // ============================================================
 // ⭐ CONSTANTES SQLITE / DATABASE
 // ============================================================
 
-const DB_JOURNAL_MODE =
-  process.env.DB_JOURNAL_MODE || 'WAL';
-
-const DB_SYNCHRONOUS =
-  process.env.DB_SYNCHRONOUS || 'NORMAL';
-
-const DB_CACHE_SIZE =
-  parseInt(process.env.DB_CACHE_SIZE, 10) || 10000;
-
-const DB_MMAP_SIZE =
-  parseInt(process.env.DB_MMAP_SIZE, 10) || 268435456;
-
-const DB_JOURNAL_SIZE_LIMIT =
-  parseInt(process.env.DB_JOURNAL_SIZE_LIMIT, 10) || 10485760;
-
-const DB_BUSY_TIMEOUT =
-  parseInt(process.env.DB_BUSY_TIMEOUT, 10) || 30000;
+const DB_JOURNAL_MODE = 'WAL';
+const DB_SYNCHRONOUS = 'NORMAL';
+const DB_CACHE_SIZE = 10000;
+const DB_MMAP_SIZE = 268435456;
+const DB_JOURNAL_SIZE_LIMIT = 10485760;
+const DB_BUSY_TIMEOUT = 30000;
 
 // ============================================================
 // ⭐ RETRY & SECURITY
 // ============================================================
 
 const MAX_RETRIES = 3;
-
 const MAX_BUSY_RETRIES = 5;
-
 const RETRY_DELAY_MS = 50;
 
 // ============================================================

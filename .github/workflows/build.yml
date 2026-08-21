@@ -50,6 +50,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-electron-
 
+      - name: Create .env for production
+        shell: pwsh
+        run: |
+          # ⭐ Mamorona ny .env mba hahazoana ny JWT_SECRET sy ny hafa
+          @"
+          VITE_APP_NAME=FITAIA
+          VITE_APP_VERSION=3.0.0
+          VITE_APP_ENV=production
+          JWT_SECRET=upA8lN2MfcFQBPge8AbGSRQDVGRwXuqFnfb3B0xh1+2l2oiHmOKdMhoQvzwfv5aqE2Io4a+EFPEWPliSVyiXBQ==
+          JWT_EXPIRES_IN=24h
+          BCRYPT_SALT_ROUNDS=12
+          TWO_FACTOR_ENABLED=true
+          TWO_FACTOR_APP_NAME=FITAIA
+          TWO_FACTOR_WINDOW=1
+          "@ | Out-File -FilePath .env -Encoding utf8
+
       - name: Install dependencies
         run: npm ci
 
@@ -63,34 +79,17 @@ jobs:
           Write-Host "=========================================="
           Write-Host " VERIFY ELECTRON FILES"
           Write-Host "=========================================="
-
-          if (!(Test-Path "electron/main.cjs")) {
-            Write-Host "ERROR: electron/main.cjs missing"
-            exit 1
-          }
-
-          if (!(Test-Path "electron/preload.cjs")) {
-            Write-Host "ERROR: electron/preload.cjs missing"
-            exit 1
-          }
-
-          if (!(Test-Path "electron/ipc/auth.cjs")) {
-            Write-Host "ERROR: electron/ipc/auth.cjs missing"
-            exit 1
-          }
-
-          if (!(Test-Path "electron/ipc/auth/handlers.cjs")) {
-            Write-Host "ERROR: electron/ipc/auth/handlers.cjs missing"
-            exit 1
-          }
-
+          if (!(Test-Path "electron/main.cjs")) { Write-Host "ERROR: electron/main.cjs missing"; exit 1 }
+          if (!(Test-Path "electron/preload.cjs")) { Write-Host "ERROR: electron/preload.cjs missing"; exit 1 }
+          if (!(Test-Path "electron/ipc/auth.cjs")) { Write-Host "ERROR: electron/ipc/auth.cjs missing"; exit 1 }
+          if (!(Test-Path "electron/ipc/auth/handlers.cjs")) { Write-Host "ERROR: electron/ipc/auth/handlers.cjs missing"; exit 1 }
           Write-Host "OK: main.cjs"
           Write-Host "OK: preload.cjs"
           Write-Host "OK: auth.cjs"
           Write-Host "OK: auth/handlers.cjs"
 
-      - name: Build secure frontend
-        run: npm run build:prod
+      - name: Build frontend
+        run: npm run build
 
       - name: Verify production frontend
         shell: pwsh
@@ -99,12 +98,7 @@ jobs:
           Write-Host "=========================================="
           Write-Host " VERIFY DIST"
           Write-Host "=========================================="
-
-          if (!(Test-Path "dist/index.html")) {
-            Write-Host "ERROR: dist/index.html missing"
-            exit 1
-          }
-
+          if (!(Test-Path "dist/index.html")) { Write-Host "ERROR: dist/index.html missing"; exit 1 }
           Write-Host "OK: dist/index.html"
 
       - name: Build Windows Installer EXE
@@ -122,24 +116,14 @@ jobs:
           Write-Host "=========================================="
           Write-Host " WINDOWS BUILD OUTPUT"
           Write-Host "=========================================="
-
-          if (!(Test-Path "release")) {
-            Write-Host "ERROR: release directory does not exist."
-            exit 1
-          }
-
+          if (!(Test-Path "release")) { Write-Host "ERROR: release directory does not exist."; exit 1 }
           Get-ChildItem release -Recurse -File | Select-Object FullName, Length
 
       - name: Verify Windows EXE
         shell: pwsh
         run: |
           $files = Get-ChildItem release -File -Filter "*.exe"
-
-          if ($files.Count -eq 0) {
-            Write-Host "ERROR: No Windows EXE found."
-            exit 1
-          }
-
+          if ($files.Count -eq 0) { Write-Host "ERROR: No Windows EXE found."; exit 1 }
           Write-Host ""
           Write-Host "Windows EXE Found:"
           $files | ForEach-Object { Write-Host $_.FullName }
@@ -148,15 +132,12 @@ jobs:
         shell: pwsh
         run: |
           $files = Get-ChildItem release -File -Filter "*.exe"
-
           foreach ($file in $files) {
             $newName = "lifes-art-$env:VERSION-win64-setup.exe"
-
             Write-Host "Renaming:"
             Write-Host "$($file.Name)"
             Write-Host "to"
             Write-Host "$newName"
-
             Rename-Item `
               -Path $file.FullName `
               -NewName $newName `
@@ -204,6 +185,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-electron-
 
+      - name: Create .env for production
+        shell: bash
+        run: |
+          # ⭐ Mamorona ny .env mba hahazoana ny JWT_SECRET sy ny hafa
+          cat > .env << 'EOF'
+          VITE_APP_NAME=FITAIA
+          VITE_APP_VERSION=3.0.0
+          VITE_APP_ENV=production
+          JWT_SECRET=upA8lN2MfcFQBPge8AbGSRQDVGRwXuqFnfb3B0xh1+2l2oiHmOKdMhoQvzwfv5aqE2Io4a+EFPEWPliSVyiXBQ==
+          JWT_EXPIRES_IN=24h
+          BCRYPT_SALT_ROUNDS=12
+          TWO_FACTOR_ENABLED=true
+          TWO_FACTOR_APP_NAME=FITAIA
+          TWO_FACTOR_WINDOW=1
+          EOF
+
       - name: Install dependencies
         run: npm ci
 
@@ -217,34 +214,17 @@ jobs:
           echo "=========================================="
           echo " VERIFY ELECTRON FILES"
           echo "=========================================="
-
-          test -f electron/main.cjs || {
-            echo "ERROR: electron/main.cjs missing"
-            exit 1
-          }
-
-          test -f electron/preload.cjs || {
-            echo "ERROR: electron/preload.cjs missing"
-            exit 1
-          }
-
-          test -f electron/ipc/auth.cjs || {
-            echo "ERROR: electron/ipc/auth.cjs missing"
-            exit 1
-          }
-
-          test -f electron/ipc/auth/handlers.cjs || {
-            echo "ERROR: electron/ipc/auth/handlers.cjs missing"
-            exit 1
-          }
-
+          test -f electron/main.cjs || { echo "ERROR: electron/main.cjs missing"; exit 1 }
+          test -f electron/preload.cjs || { echo "ERROR: electron/preload.cjs missing"; exit 1 }
+          test -f electron/ipc/auth.cjs || { echo "ERROR: electron/ipc/auth.cjs missing"; exit 1 }
+          test -f electron/ipc/auth/handlers.cjs || { echo "ERROR: electron/ipc/auth/handlers.cjs missing"; exit 1 }
           echo "OK: main.cjs"
           echo "OK: preload.cjs"
           echo "OK: auth.cjs"
           echo "OK: auth/handlers.cjs"
 
-      - name: Build secure frontend
-        run: npm run build:prod
+      - name: Build frontend
+        run: npm run build
 
       - name: Verify production frontend
         shell: bash
@@ -253,12 +233,7 @@ jobs:
           echo "=========================================="
           echo " VERIFY DIST"
           echo "=========================================="
-
-          test -f dist/index.html || {
-            echo "ERROR: dist/index.html missing"
-            exit 1
-          }
-
+          test -f dist/index.html || { echo "ERROR: dist/index.html missing"; exit 1 }
           echo "OK: dist/index.html"
 
       - name: Build Linux DEB
@@ -276,21 +251,17 @@ jobs:
           echo "=========================================="
           echo " LINUX BUILD OUTPUT"
           echo "=========================================="
-
           if [ ! -d "release" ]; then
             echo "ERROR: release directory does not exist."
             exit 1
           fi
-
           find release -maxdepth 1 -type f -print
 
       - name: Verify DEB
         shell: bash
         run: |
           COUNT=$(find release -maxdepth 1 -type f -name "*.deb" | wc -l)
-
           echo "DEB count: $COUNT"
-
           if [ "$COUNT" -eq 0 ]; then
             echo "ERROR: Linux DEB package not found."
             exit 1

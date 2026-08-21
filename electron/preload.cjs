@@ -5,10 +5,14 @@ console.log('🔌 PRELOAD SCRIPT - CHARGEMENT...');
 if (!ipcRenderer) throw new Error('Electron IPC unavailable');
 ipcRenderer.setMaxListeners(50);
 
-const DEBUG = process.env.NODE_ENV === 'development';
+// ⭐ FANITSARA: Hardcoded ny DEBUG mba tsy hiankina amin'ny process.env
+const DEBUG = false;
+
 function log(...args) { if (DEBUG) console.log(...args); }
 log('🔌 Plateforme:', process.platform);
-const APP_VERSION = process.env.npm_package_version || process.env.APP_VERSION || '3.0.0';
+
+// ⭐ FANITSARA: Hardcoded ny APP_VERSION mba tsy hiankina amin'ny process.env
+const APP_VERSION = '3.0.0';
 
 function invoke(channel, ...args) {
   try { return ipcRenderer.invoke(channel, ...args); } 

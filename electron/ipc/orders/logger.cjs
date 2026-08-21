@@ -2,7 +2,7 @@
 // electron/ipc/orders/logger.cjs - LOGGING
 // ============================================================
 
-const DEBUG = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+const DEBUG = false;
 
 function log(...args) {
   if (DEBUG) console.log('[📦 orders]', ...args);

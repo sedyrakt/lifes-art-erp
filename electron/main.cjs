@@ -5,6 +5,13 @@
 
 const {app,BrowserWindow,ipcMain,session,shell,protocol,Menu,dialog}=require('electron');
 const path=require('path'),fs=require('fs');
+const dotenv = require('dotenv');
+
+// ⭐ FANITSARA: Mampiasa app.getAppPath() mba hahita tsara ny .env rehefa vita ny build
+dotenv.config({
+  path: path.join(app.getAppPath(), '.env')
+});
+
 const {initDatabase,closeDatabase}=require('./database/init.cjs');
 const {getDb,getDbPath,getDatabaseDebugInfo}=require('./database/connection.cjs');
 const {log,warn,error}=require('./database/utils.cjs');
@@ -16,6 +23,11 @@ const isDev=!app.isPackaged||process.env.NODE_ENV==='development',DEV_SERVER_URL
 function mainLog(...args){console.log('[MAIN]',...args);}
 function mainWarn(...args){console.warn('[MAIN]',...args);}
 function mainError(...args){console.error('[MAIN]',...args);}
+
+// ⭐ FANITSARA: Fanamarinana ny .env sy ny JWT_SECRET
+mainLog('🔐 JWT_SECRET loaded:', Boolean(process.env.JWT_SECRET));
+mainLog('📦 APP PATH:', app.getAppPath());
+mainLog('📄 ENV PATH:', path.join(app.getAppPath(), '.env'));
 
 function printDatabaseInfo(){
   try{

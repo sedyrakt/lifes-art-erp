@@ -8,7 +8,8 @@ const path = require('path');
 const crypto = require('crypto');
 const { app } = require('electron');
 
-const DEBUG = process.env.NODE_ENV === 'development';
+// ⭐ FANITSARA: Hardcoded ny DEBUG mba tsy hiankina amin'ny process.env.NODE_ENV
+const DEBUG = false;
 
 // ============================================================
 // ⭐ LOGGING
@@ -154,7 +155,8 @@ try {
   warn('⚠️ bcrypt non installé, les fonctions de hachage ne fonctionneront pas');
 }
 
-const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 12;
+// ⭐ FANITSARA: Hardcoded ny SALT_ROUNDS mba tsy hiankina amin'ny process.env
+const SALT_ROUNDS = 12;
 
 function hashPassword(password) {
   if (!bcrypt) {

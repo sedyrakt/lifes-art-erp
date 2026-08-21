@@ -20,6 +20,17 @@ let stmtUpdateUserPassword = null;
 let stmtUpdateUser2FA = null;
 let stmtUpdateUser2FADisable = null;
 
+// ⭐ FANITSARA: Fanamarinana raha misy ny colonne
+function columnExists(db, tableName, columnName) {
+  try {
+    const stmt = db.prepare(`PRAGMA table_info(${tableName})`);
+    const columns = stmt.all();
+    return columns.some(c => c.name === columnName);
+  } catch (e) {
+    return false;
+  }
+}
+
 function prepareStatements() {
   const db = getDb();
   if (!db) {
@@ -68,9 +79,22 @@ function prepareStatements() {
     stmtGetSessionsByUser = db.prepare(
       "SELECT * FROM sessions WHERE userId = ? AND expiresAt > datetime('now') ORDER BY createdAt DESC"
     );
-    stmtUpdateUserLastLogin = db.prepare(
-      "UPDATE utilisateurs SET loginAttempts = 0, lockedUntil = NULL, lastLogin = datetime('now') WHERE id = ?"
-    );
+    
+    // ⭐ FANITSARA: Vérifier si les colonnes existent avant de préparer
+    const hasLoginAttempts = columnExists(db, 'utilisateurs', 'loginAttempts');
+    const hasLockedUntil = columnExists(db, 'utilisateurs', 'lockedUntil');
+    
+    if (hasLoginAttempts && hasLockedUntil) {
+      stmtUpdateUserLastLogin = db.prepare(
+        "UPDATE utilisateurs SET loginAttempts = 0, lockedUntil = NULL, lastLogin = datetime('now') WHERE id = ?"
+      );
+    } else {
+      // ⭐ Fallback: Raha tsy misy ireo colonnes
+      stmtUpdateUserLastLogin = db.prepare(
+        "UPDATE utilisateurs SET lastLogin = datetime('now') WHERE id = ?"
+      );
+    }
+
     stmtUpdateUserPassword = db.prepare(
       "UPDATE utilisateurs SET password = ?, updated_at = datetime('now') WHERE id = ?"
     );

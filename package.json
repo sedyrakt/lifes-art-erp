@@ -30,7 +30,6 @@
     "clean": "rm -rf dist/ release/ node_modules/.vite dist-electron/ dist-final/",
     "clean:all": "rm -rf dist/ release/ dist-electron/ dist-final/ node_modules/",
     "build": "vite build --config vite.config.mjs",
-    "build:prod": "vite build --config vite.config.mjs",
     "build:tsc": "tsc -b && vite build",
     "build:skip": "vite build --emptyOutDir",
     "dist": "npm run build && electron-builder --config electron-builder.yml",

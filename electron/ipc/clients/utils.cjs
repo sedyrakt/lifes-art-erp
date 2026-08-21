@@ -5,7 +5,8 @@
 
 const { BrowserWindow } = require('electron');
 
-const DEBUG = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+// ⭐ FANITSARA: Hardcoded ny DEBUG mba tsy hiankina amin'ny process.env.NODE_ENV
+const DEBUG = false;
 
 function log(...args) {
   if (DEBUG) console.log(...args);

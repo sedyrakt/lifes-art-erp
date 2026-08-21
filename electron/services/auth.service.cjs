@@ -1,7 +1,8 @@
 // electron/services/auth.service.cjs - SYNCHRONOUS
 const bcrypt = require('bcryptjs');
 
-const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
+// ⭐ FANITSARA: Hardcoded ny SALT_ROUNDS mba tsy hiankina amin'ny process.env
+const SALT_ROUNDS = 12;
 
 const hashPassword = (password) => {
   return bcrypt.hashSync(password, SALT_ROUNDS);
