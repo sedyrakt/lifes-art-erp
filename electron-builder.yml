@@ -1,37 +1,88 @@
+# ============================================================
+# LIFE'S ART ERP
+# electron-builder.yml
+# ============================================================
+
 appId: com.lifesart.app
+
 productName: lifes-art
+
 directories:
   output: release
+
 compression: normal
+
+# ------------------------------------------------------------
+# IMPORTANT
+# ------------------------------------------------------------
+# GitHub Actions already runs electron-rebuild.
+# Keep this false to avoid unnecessary rebuild.
+# ------------------------------------------------------------
+
 npmRebuild: false
+
+# ============================================================
+# FILES
+# ============================================================
 
 files:
   - dist/**/*
   - electron/**/*
   - package.json
-  - .env
   - "!**/*.js.map"
   - "!**/node_modules/.cache/**"
 
+# ============================================================
+# ASAR
+# ============================================================
+
 asar: true
+
+# ============================================================
+# ASAR UNPACK
+# ============================================================
+# IMPORTANT:
+# DO NOT unpack electron/ipc/**
+# DO NOT unpack electron/preload.cjs
+#
+# main.cjs uses:
+# path.resolve(__dirname, './ipc/auth.cjs')
+#
+# Therefore IPC files must remain inside app.asar.
+# ============================================================
+
 asarUnpack:
   - "**/*.node"
   - "**/node_modules/better-sqlite3/**/*"
   - "**/node_modules/sharp/**/*"
-  - "electron/ipc/**/*"
-  - "electron/preload.cjs"
+
+# ============================================================
+# WINDOWS
+# ============================================================
 
 win:
   target:
     - nsis
+
   icon: public/logo.ico
+
+# ============================================================
+# NSIS
+# ============================================================
 
 nsis:
   oneClick: false
+
   allowToChangeInstallationDirectory: true
+
+# ============================================================
+# LINUX
+# ============================================================
 
 linux:
   target:
     - deb
+
   category: Office
+
   icon: public/logo.png
