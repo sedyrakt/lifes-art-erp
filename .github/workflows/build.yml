@@ -182,10 +182,10 @@ jobs:
           echo "=========================================="
           echo " VERIFY ELECTRON FILES"
           echo "=========================================="
-          test -f electron/main.cjs || { echo "ERROR: electron/main.cjs missing"; exit 1 }
-          test -f electron/preload.cjs || { echo "ERROR: electron/preload.cjs missing"; exit 1 }
-          test -f electron/ipc/auth.cjs || { echo "ERROR: electron/ipc/auth.cjs missing"; exit 1 }
-          test -f electron/ipc/auth/handlers.cjs || { echo "ERROR: electron/ipc/auth/handlers.cjs missing"; exit 1 }
+          test -f electron/main.cjs || { echo "ERROR: electron/main.cjs missing"; exit 1; }
+          test -f electron/preload.cjs || { echo "ERROR: electron/preload.cjs missing"; exit 1; }
+          test -f electron/ipc/auth.cjs || { echo "ERROR: electron/ipc/auth.cjs missing"; exit 1; }
+          test -f electron/ipc/auth/handlers.cjs || { echo "ERROR: electron/ipc/auth/handlers.cjs missing"; exit 1; }
           echo "OK: main.cjs"
           echo "OK: preload.cjs"
           echo "OK: auth.cjs"
@@ -201,7 +201,7 @@ jobs:
           echo "=========================================="
           echo " VERIFY DIST"
           echo "=========================================="
-          test -f dist/index.html || { echo "ERROR: dist/index.html missing"; exit 1 }
+          test -f dist/index.html || { echo "ERROR: dist/index.html missing"; exit 1; }
           echo "OK: dist/index.html"
 
       - name: Build Linux DEB
