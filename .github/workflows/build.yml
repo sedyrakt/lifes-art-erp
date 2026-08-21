@@ -1,6 +1,5 @@
 # ============================================================
-# LIFE'S ART ERP
-# GitHub Actions - Windows + Linux (Fully Optimized)
+# LIFE'S ART ERP - GitHub Actions - Windows + Linux
 # ============================================================
 
 name: Build & Release
@@ -17,19 +16,10 @@ permissions:
   contents: read
 
 jobs:
-
-  # ==========================================================
-  # WINDOWS
-  # ==========================================================
-
   build-windows:
-
-    name: Build Windows Installer EXE (NSIS only)
-
+    name: Build Windows Installer EXE (NSIS)
     runs-on: windows-latest
-
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -43,7 +33,10 @@ jobs:
         shell: pwsh
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          Write-Host "Application version: $version"
+          Write-Host "=========================================="
+          Write-Host " APPLICATION VERSION"
+          Write-Host "=========================================="
+          Write-Host "Version: $version"
           "VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Cache Electron
@@ -60,14 +53,67 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Rebuild native modules (better-sqlite3)
+      - name: Rebuild native modules
         run: npx electron-rebuild -f -w better-sqlite3
 
-      - name: Build secure frontend (Build, Obfuscate, Compile)
+      - name: Verify Electron IPC files
+        shell: pwsh
+        run: |
+          Write-Host ""
+          Write-Host "=========================================="
+          Write-Host " VERIFY ELECTRON FILES"
+          Write-Host "=========================================="
+
+          if (!(Test-Path "electron/main.cjs")) {
+            Write-Host "ERROR: electron/main.cjs missing"
+            exit 1
+          }
+
+          if (!(Test-Path "electron/preload.cjs")) {
+            Write-Host "ERROR: electron/preload.cjs missing"
+            exit 1
+          }
+
+          if (!(Test-Path "electron/ipc/auth.cjs")) {
+            Write-Host "ERROR: electron/ipc/auth.cjs missing"
+            exit 1
+          }
+
+          if (!(Test-Path "electron/ipc/auth/handlers.cjs")) {
+            Write-Host "ERROR: electron/ipc/auth/handlers.cjs missing"
+            exit 1
+          }
+
+          Write-Host "OK: main.cjs"
+          Write-Host "OK: preload.cjs"
+          Write-Host "OK: auth.cjs"
+          Write-Host "OK: auth/handlers.cjs"
+
+      - name: Build secure frontend
         run: npm run build:prod
 
-      - name: Build Windows Installer EXE (NSIS)
-        run: npx electron-builder --win --x64 --config electron-builder.yml --publish=never
+      - name: Verify production frontend
+        shell: pwsh
+        run: |
+          Write-Host ""
+          Write-Host "=========================================="
+          Write-Host " VERIFY DIST"
+          Write-Host "=========================================="
+
+          if (!(Test-Path "dist/index.html")) {
+            Write-Host "ERROR: dist/index.html missing"
+            exit 1
+          }
+
+          Write-Host "OK: dist/index.html"
+
+      - name: Build Windows Installer EXE
+        run: |
+          npx electron-builder `
+            --win `
+            --x64 `
+            --config electron-builder.yml `
+            --publish=never
 
       - name: Show Windows output
         shell: pwsh
@@ -76,36 +122,41 @@ jobs:
           Write-Host "=========================================="
           Write-Host " WINDOWS BUILD OUTPUT"
           Write-Host "=========================================="
+
           if (!(Test-Path "release")) {
             Write-Host "ERROR: release directory does not exist."
             exit 1
           }
+
           Get-ChildItem release -Recurse -File | Select-Object FullName, Length
 
       - name: Verify Windows EXE
         shell: pwsh
         run: |
           $files = Get-ChildItem release -File -Filter "*.exe"
+
           if ($files.Count -eq 0) {
             Write-Host "ERROR: No Windows EXE found."
             exit 1
           }
+
           Write-Host ""
           Write-Host "Windows EXE Found:"
-          $files | ForEach-Object {
-            Write-Host $_.FullName
-          }
+          $files | ForEach-Object { Write-Host $_.FullName }
 
       - name: Rename Windows EXE
         shell: pwsh
         run: |
           $files = Get-ChildItem release -File -Filter "*.exe"
+
           foreach ($file in $files) {
             $newName = "lifes-art-$env:VERSION-win64-setup.exe"
+
             Write-Host "Renaming:"
             Write-Host "$($file.Name)"
             Write-Host "to"
             Write-Host "$newName"
+
             Rename-Item `
               -Path $file.FullName `
               -NewName $newName `
@@ -119,19 +170,10 @@ jobs:
           path: release/*.exe
           if-no-files-found: error
 
-
-  # ==========================================================
-  # LINUX (Deb only)
-  # ==========================================================
-
   build-linux:
-
     name: Build Linux DEB Package
-
     runs-on: ubuntu-latest
-
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -145,7 +187,10 @@ jobs:
         shell: bash
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          echo "Application version: $VERSION"
+          echo "=========================================="
+          echo " APPLICATION VERSION"
+          echo "=========================================="
+          echo "Version: $VERSION"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Cache Electron
@@ -162,14 +207,67 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Rebuild native modules (better-sqlite3)
+      - name: Rebuild native modules
         run: npx electron-rebuild -f -w better-sqlite3
 
-      - name: Build secure frontend (Build, Obfuscate, Compile)
+      - name: Verify Electron IPC files
+        shell: bash
+        run: |
+          echo ""
+          echo "=========================================="
+          echo " VERIFY ELECTRON FILES"
+          echo "=========================================="
+
+          test -f electron/main.cjs || {
+            echo "ERROR: electron/main.cjs missing"
+            exit 1
+          }
+
+          test -f electron/preload.cjs || {
+            echo "ERROR: electron/preload.cjs missing"
+            exit 1
+          }
+
+          test -f electron/ipc/auth.cjs || {
+            echo "ERROR: electron/ipc/auth.cjs missing"
+            exit 1
+          }
+
+          test -f electron/ipc/auth/handlers.cjs || {
+            echo "ERROR: electron/ipc/auth/handlers.cjs missing"
+            exit 1
+          }
+
+          echo "OK: main.cjs"
+          echo "OK: preload.cjs"
+          echo "OK: auth.cjs"
+          echo "OK: auth/handlers.cjs"
+
+      - name: Build secure frontend
         run: npm run build:prod
 
+      - name: Verify production frontend
+        shell: bash
+        run: |
+          echo ""
+          echo "=========================================="
+          echo " VERIFY DIST"
+          echo "=========================================="
+
+          test -f dist/index.html || {
+            echo "ERROR: dist/index.html missing"
+            exit 1
+          }
+
+          echo "OK: dist/index.html"
+
       - name: Build Linux DEB
-        run: npx electron-builder --linux deb --x64 --config electron-builder.yml --publish=never
+        run: |
+          npx electron-builder \
+            --linux deb \
+            --x64 \
+            --config electron-builder.yml \
+            --publish=never
 
       - name: Show Linux output
         shell: bash
@@ -178,19 +276,23 @@ jobs:
           echo "=========================================="
           echo " LINUX BUILD OUTPUT"
           echo "=========================================="
+
           if [ ! -d "release" ]; then
             echo "ERROR: release directory does not exist."
             exit 1
           fi
+
           find release -maxdepth 1 -type f -print
 
       - name: Verify DEB
         shell: bash
         run: |
           COUNT=$(find release -maxdepth 1 -type f -name "*.deb" | wc -l)
+
           echo "DEB count: $COUNT"
+
           if [ "$COUNT" -eq 0 ]; then
-            echo "ERROR: DEB package not found."
+            echo "ERROR: Linux DEB package not found."
             exit 1
           fi
 

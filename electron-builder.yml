@@ -4,21 +4,12 @@
 # ============================================================
 
 appId: com.lifesart.app
-
 productName: lifes-art
 
 directories:
   output: release
 
 compression: normal
-
-# ------------------------------------------------------------
-# IMPORTANT
-# ------------------------------------------------------------
-# GitHub Actions already runs electron-rebuild.
-# Keep this false to avoid unnecessary rebuild.
-# ------------------------------------------------------------
-
 npmRebuild: false
 
 # ============================================================
@@ -41,15 +32,6 @@ asar: true
 # ============================================================
 # ASAR UNPACK
 # ============================================================
-# IMPORTANT:
-# DO NOT unpack electron/ipc/**
-# DO NOT unpack electron/preload.cjs
-#
-# main.cjs uses:
-# path.resolve(__dirname, './ipc/auth.cjs')
-#
-# Therefore IPC files must remain inside app.asar.
-# ============================================================
 
 asarUnpack:
   - "**/*.node"
@@ -63,7 +45,6 @@ asarUnpack:
 win:
   target:
     - nsis
-
   icon: public/logo.ico
 
 # ============================================================
@@ -72,7 +53,6 @@ win:
 
 nsis:
   oneClick: false
-
   allowToChangeInstallationDirectory: true
 
 # ============================================================
@@ -82,7 +62,5 @@ nsis:
 linux:
   target:
     - deb
-
   category: Office
-
   icon: public/logo.png
