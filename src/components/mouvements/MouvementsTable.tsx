@@ -8,6 +8,7 @@
 // ⭐ BULK ACTIONS
 // ⭐ PORTAL ACTION MENU
 // ⭐ RESPONSIVE HORIZONTAL SCROLL
+// ⭐ FIX: ImageOff rehefa tsy misy sary
 // ============================================================
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -195,7 +196,7 @@ const MouvementsTable: React.FC<MouvementsTableProps> = ({ mouvements, getTypeCo
                     {imageUrl ? (
                       <img src={imageUrl} alt={mouvement.produit_nom || 'Produit'} loading="lazy" className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
                     ) : (
-                      <div className="flex items-center justify-center w-full h-full">
+                      <div className="flex items-center justify-center w-full h-full bg-slate-100 dark:bg-slate-700">
                         <ImageOff size={18} strokeWidth={1.8} className="text-slate-400 dark:text-slate-500" />
                       </div>
                     )}

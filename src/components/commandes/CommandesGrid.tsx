@@ -3,22 +3,8 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
-  ShoppingCart,
-  Eye,
-  Receipt,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Truck,
-  MoreVertical,
-  ImageOff,
-  Phone,
-  Package,
-  CalendarDays,
-  Plus,
-  User,
-  CreditCard,
+  ShoppingCart, Eye, Receipt, Trash2, CheckCircle, XCircle, Clock, Truck, 
+  MoreVertical, ImageOff, Phone, Package, CalendarDays, Mail
 } from 'lucide-react';
 import { formatMoney } from '../../lib/formatMoney';
 import { STATUS } from '../../types/commandes';
@@ -49,6 +35,7 @@ interface CommandesGridProps {
   onDelete: (commande: Commande) => void;
   getStatusColor: (status: string) => string;
   getStatusIcon: (status: string) => React.ReactNode;
+  // ⭐ IREO PROPS IREO NO ILANA NY SARY:
   clientImageUrls?: Record<number, string | null>;
   clientImageErrors?: Record<number, boolean>;
   handleClientImageError?: (id: number) => void;
@@ -96,8 +83,8 @@ const CommandesGrid: React.FC<CommandesGridProps> = ({
   onDelete,
   getStatusColor,
   getStatusIcon,
-  clientImageUrls = {},
-  clientImageErrors = {},
+  clientImageUrls = {},     // ⭐ ETO NO IDINY NY SARY
+  clientImageErrors = {},   // ⭐ ETO NO IDINY NY ERREUR
   handleClientImageError,
   isDark: isDarkProp,
 }) => {
@@ -136,7 +123,7 @@ const CommandesGrid: React.FC<CommandesGridProps> = ({
     callback();
   };
 
-  // ⭐ EMPTY STATE (mitovy endrika amin'ny ProduitsGrid)
+  // ⭐ EMPTY STATE
   if (commandes.length === 0) {
     return (
       <div className={`flex min-h-[390px] flex-col items-center justify-center rounded-2xl border bg-white px-6 py-14 text-center shadow-sm dark:bg-[#111c30] dark:shadow-[0_12px_40px_rgba(0,0,0,0.20)] ${isDark ? 'border-white/[0.14]' : 'border-slate-300'}`}>
@@ -152,13 +139,15 @@ const CommandesGrid: React.FC<CommandesGridProps> = ({
   }
 
   // ------------------------------------------------------------
-  // GRID PRINCIPAL (MITOVY ENDRIKA AMIN'NY PRODUITSGRID)
+  // GRID PRINCIPAL
   // ------------------------------------------------------------
   return (
-    <div className={`grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 ${isDark ? 'bg-[#111c30]' : 'bg-white'}`}>
+    <div className={`grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 ${isDark ? 'bg-[#111c30]' : 'bg-white'}`}>
       {commandes.filter(Boolean).map((commande) => {
+        // ⭐ NY PHOTO IZY IREO NO ATAO ETO:
         const imageUrl = clientImageUrls[commande.client_id] || null;
         const imageError = clientImageErrors[commande.client_id] || false;
+        
         const initials = commande.client_nom?.trim().split(/\s+/).filter(Boolean).map((name) => name.charAt(0)).join('').slice(0, 2).toUpperCase() || '?';
         const products = parseProducts(commande.produits_noms);
         const visibleProducts = products.slice(0, 2);
@@ -170,21 +159,34 @@ const CommandesGrid: React.FC<CommandesGridProps> = ({
           <div
             key={commande.id}
             onClick={() => onView(commande)}
-            className={`group relative flex flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer ${isDark ? 'border-white/[0.10] bg-[#111c30] hover:border-white/[0.20]' : 'border-slate-200 bg-white hover:border-indigo-200'}`}
+            className={`group relative flex flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer ${isDark ? 'border-white/[0.10] bg-[#111c30] hover:border-white/[0.20]' : 'border-slate-200 bg-white hover:border-indigo-200'}`}
           >
-            {/* ⭐ 1. PHOTO CLIENT (Mitovy amin'ny sary produit) */}
-            <div className="relative h-48 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+            {/* ⭐ 1. PHOTO CLIENT */}
+            <div className="relative h-36 w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800">
               {imageUrl && !imageError ? (
-                <img src={imageUrl} alt={commande.client_nom} loading="lazy" onError={() => handleClientImageError?.(commande.client_id)} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <img 
+                  src={imageUrl} 
+                  alt={commande.client_nom} 
+                  loading="lazy" 
+                  onError={() => handleClientImageError?.(commande.client_id)} 
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                />
               ) : imageError ? (
-                <div className="flex h-full w-full items-center justify-center"><ImageOff size={32} className="text-slate-400 dark:text-slate-500" /></div>
+                <div className="flex h-full w-full items-center justify-center bg-slate-200 dark:bg-slate-700">
+                  <ImageOff size={28} className="text-slate-400 dark:text-slate-500" />
+                </div>
               ) : (
-                <div className="flex h-full w-full items-center justify-center"><span className="text-4xl font-bold text-indigo-600 dark:text-indigo-400">{initials}</span></div>
+                <div className="flex h-full w-full items-center justify-center bg-indigo-50 dark:bg-indigo-500/10">
+                  <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{initials}</span>
+                </div>
               )}
               
-              {/* ⭐ Badge Statut eo ambony ankavanana (mitovy amin'ny ProduitsGrid) */}
-              <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5 z-10">
-                <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[13px] font-semibold backdrop-blur-sm ${getStatusColor(commande.statut)}`} style={{ background: isDark ? 'rgba(15,23,42,0.75)' : 'rgba(255,255,255,0.92)' }}>
+              {/* ⭐ CALQUE (OVERLAY) MAIZY AMBANY */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+              {/* ⭐ Badge Statut (Misy Background maizina sy Blur) */}
+              <div className="absolute right-2 top-2 z-10">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm backdrop-blur-md">
                   <span className={`h-1.5 w-1.5 rounded-full ${getStatusDotColor(commande.statut)}`} />
                   {getStatusIcon(commande.statut)}
                   {commande.statut}
@@ -192,27 +194,37 @@ const CommandesGrid: React.FC<CommandesGridProps> = ({
               </div>
             </div>
 
-            {/* ⭐ 2. BODY (mitovy amin'ny ProduitsGrid) */}
-            <div className="flex flex-1 flex-col p-4">
+            {/* ⭐ 2. BODY (COMPACT P-3) */}
+            <div className="flex flex-1 flex-col p-3">
               {/* N° Commande + Nom Client */}
-              <div className="flex items-start justify-between">
-                <h4 className="text-[14.5px] font-semibold text-slate-900 line-clamp-2 dark:text-slate-100" title={commande.client_nom}>
+              <div className="mb-1 flex items-start justify-between">
+                <h4 className="text-[14px] font-semibold text-slate-900 line-clamp-1 dark:text-slate-100" title={commande.client_nom}>
                   {commande.client_nom || 'Client inconnu'}
                 </h4>
-                <span className="inline-flex rounded-md bg-indigo-50 px-2 py-0.5 font-mono text-[12px] font-semibold text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 shrink-0 ml-2">
+                <span className="inline-flex rounded-md bg-indigo-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 shrink-0 ml-2">
                   {commande.numero}
                 </span>
               </div>
 
               {/* Téléphone / Email */}
-              <div className="mt-1 flex min-w-0 items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400">
-                {commande.client_telephone && <><Phone size={13} className="shrink-0" /><span className="truncate">{commande.client_telephone}</span></>}
-                {commande.client_email && !commande.client_telephone && <><Mail size={13} className="shrink-0" /><span className="truncate">{commande.client_email}</span></>}
+              <div className="space-y-1 text-[13px] text-slate-500 dark:text-slate-400">
+                {commande.client_telephone && (
+                  <div className="flex min-w-0 items-center gap-2 truncate">
+                    <Phone size={13} className="shrink-0" />
+                    <span className="truncate">{commande.client_telephone}</span>
+                  </div>
+                )}
+                {commande.client_email && !commande.client_telephone && (
+                  <div className="flex min-w-0 items-center gap-2 truncate">
+                    <Mail size={13} className="shrink-0" />
+                    <span className="truncate">{commande.client_email}</span>
+                  </div>
+                )}
               </div>
 
               {/* Produits */}
-              <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[13px] text-slate-700 dark:text-slate-300">
-                <Package size={14} className="shrink-0 text-slate-400 dark:text-slate-500" />
+              <div className="mt-1.5 flex min-w-0 items-center gap-1.5 text-[13px] text-slate-700 dark:text-slate-300">
+                <Package size={13} className="shrink-0 text-slate-400 dark:text-slate-500" />
                 {products.length === 0 ? (
                   <span className="text-slate-400 dark:text-slate-500">Aucun produit</span>
                 ) : (
@@ -232,29 +244,29 @@ const CommandesGrid: React.FC<CommandesGridProps> = ({
               {/* Date */}
               {formattedDate && (
                 <div className="mt-1 flex items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400">
-                  <CalendarDays size={14} className="shrink-0" />
+                  <CalendarDays size={13} className="shrink-0" />
                   <span>{formattedDate.date}</span>
                   <span className="text-slate-300 dark:text-slate-600">•</span>
                   <span>{formattedDate.time}</span>
                 </div>
               )}
 
-              {/* Total TTC (mitovy amin'ny Prix Vente) */}
-              <div className="mt-2 flex items-baseline justify-between">
-                <span className="text-[12px] text-slate-400 dark:text-slate-500">Total TTC</span>
-                <span className="text-[16px] font-bold text-slate-900 dark:text-slate-100">{formatMoney(totalTTC)}</span>
+              {/* Total TTC */}
+              <div className="mt-3 flex items-baseline justify-between border-t border-slate-200 pt-2.5 dark:border-slate-700">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">Total TTC</span>
+                <span className="text-[15px] font-bold text-indigo-600 dark:text-indigo-400">{formatMoney(totalTTC)}</span>
               </div>
 
-              {/* ⭐ 3. ACTION BUTTONS (mitovy amin'ny ProduitsGrid) */}
-              <div className="mt-3 flex items-center gap-2 border-t border-slate-200 pt-3 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-                <button type="button" title="Générer la facture" onClick={() => onGenerateFacture(commande)} className="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-slate-600 transition hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400">
-                  <Receipt size={16} className="mx-auto" />
+              {/* ⭐ 3. ACTION BUTTONS (COMPACT) */}
+              <div className="mt-3 flex items-center gap-1.5 border-t border-slate-200 pt-2.5 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+                <button type="button" title="Générer la facture" onClick={() => onGenerateFacture(commande)} className="flex h-8 flex-1 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400">
+                  <Receipt size={14} />
                 </button>
-                <button type="button" title="Voir les détails" onClick={() => onView(commande)} className="flex-1 rounded-lg bg-indigo-50 px-3 py-2 text-indigo-700 transition hover:bg-indigo-100 hover:text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-800/50">
-                  <Eye size={16} className="mx-auto" />
+                <button type="button" title="Voir les détails" onClick={() => onView(commande)} className="flex h-8 flex-1 items-center justify-center rounded-md bg-indigo-50 text-indigo-700 transition hover:bg-indigo-100 hover:text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-800/50">
+                  <Eye size={14} />
                 </button>
-                <button type="button" title="Actions" onClick={(event) => toggleMenu(commande.id, event)} className={`flex-1 rounded-lg px-3 py-2 transition-colors ${openMenuId === commande.id ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'}`}>
-                  <MoreVertical size={16} className="mx-auto" />
+                <button type="button" title="Actions" onClick={(event) => toggleMenu(commande.id, event)} className={`flex h-8 flex-1 items-center justify-center rounded-md transition-colors ${openMenuId === commande.id ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'}`}>
+                  <MoreVertical size={14} className="mx-auto" />
                 </button>
               </div>
             </div>

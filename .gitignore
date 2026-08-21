@@ -47,6 +47,8 @@ node_modules/
 # ============================================================
 dist/
 release/
+dist-electron/
+dist-final/
 *.AppImage
 *.exe
 *.dmg

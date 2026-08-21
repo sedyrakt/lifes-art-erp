@@ -267,7 +267,7 @@ const Depenses: React.FC = () => {
             <Plus size={17} strokeWidth={2.2} />Nouvelle dépense
           </button>
         </header>
-        <div className="mt-5"><DepensesStats total={reelStats.total} nb={reelStats.nb} moyenne={reelStats.moyenne} nbFournisseurs={reelStats.nbFournisseurs} refreshing={refreshing} evolutionTotal={0} evolutionNb={0} evolutionMoyenne={0} evolutionFournisseurs={0} /></div>
+       <div className="mt-5"><DepensesStats total={reelStats.total} nb={reelStats.nb} moyenne={reelStats.moyenne} nbFournisseurs={reelStats.nbFournisseurs} totalItems={totalItems} refreshing={refreshing} evolutionTotal={0} evolutionNb={0} evolutionMoyenne={0} evolutionFournisseurs={0} /></div>
         <div className="mt-0 flex flex-col gap-2.5 xl:flex-row xl:items-center">
           <div className="relative min-w-0 flex-1">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><Search size={17} className="text-slate-400 dark:text-slate-500" /></div>

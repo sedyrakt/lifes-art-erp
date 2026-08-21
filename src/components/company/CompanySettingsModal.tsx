@@ -13,7 +13,7 @@ import { CompanySettingsModalProps } from './CompanySettingsModal/types';
 
 const COLORS = {
   light: {
-    overlay: 'rgba(15, 23, 42, 0.55)',
+    overlay: 'rgba(15, 23, 42, 0.36)',
     card: '#FFFFFF',
     surface: '#FFFFFF',
     surfaceSoft: '#F8FAFC',
@@ -37,7 +37,7 @@ const COLORS = {
     dangerBorder: 'rgba(244,63,94,0.15)'
   },
   dark: {
-    overlay: 'rgba(0, 0, 0, 0.72)',
+    overlay: 'rgba(7, 4, 4, 0.66)',
     card: '#0F172A',
     surface: '#0F172A',
     surfaceSoft: '#111C30',

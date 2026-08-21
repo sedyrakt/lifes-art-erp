@@ -64,7 +64,7 @@ const CategoriesGrid: React.FC<CategoriesGridProps> = ({
 
   return (
     <div
-      className={`grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 ${
+      className={`grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 ${
         isDark ? 'bg-[#111c30]' : 'bg-white'
       }`}
     >
@@ -75,50 +75,55 @@ const CategoriesGrid: React.FC<CategoriesGridProps> = ({
         return (
           <div
             key={categorie.id}
-            className={`group relative flex flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 hover:shadow-md ${
+            className={`group relative flex flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md ${
               isDark
                 ? 'border-white/[0.10] bg-[#111c30] hover:border-white/[0.20]'
                 : 'border-slate-200 bg-white hover:border-indigo-200'
             }`}
           >
-            {/* En-tête : icône et nom */}
-            <div className="flex items-center justify-between bg-slate-50 px-4 py-3 dark:bg-slate-800/50">
-              <div className="flex items-center gap-3">
-                {/* ⭐ FOND INDIGO TOKANA HO AN'NY ICON REHETRA */}
+            {/* ⭐ HEADER COMPACT - MITOVY TANTERAKA AMIN'NY FOURNISSEURS (P-3, H-9 Icon) */}
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/50">
+              <div className="flex items-center gap-2.5">
+                {/* ⭐ FOND INDIGO TOKANA HO AN'NY ICON REHETRA - H-9 W-9 */}
                 <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-sm transition-all duration-150 group-hover:shadow-md ${
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-all duration-150 group-hover:shadow-md ${
                     isDark
                       ? 'border-white/[0.10] bg-gradient-to-br from-indigo-600 to-indigo-800 text-white'
                       : 'border-indigo-100 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white'
                   }`}
                 >
-                  <Folder size={18} strokeWidth={1.8} />
+                  <Folder size={16} strokeWidth={1.8} />
                 </div>
                 <div className="min-w-0">
+                  {/* ⭐ TEXT-[14px] - MITOVY AMIN'NY FOURNISSEURS */}
                   <div
-                    className="truncate text-[15px] font-semibold text-slate-800 transition-colors group-hover:text-indigo-600 dark:text-slate-200 dark:group-hover:text-indigo-400"
+                    className="truncate text-[14px] font-semibold text-slate-800 transition-colors group-hover:text-indigo-600 dark:text-slate-200 dark:group-hover:text-indigo-400"
                     title={categorie.nom}
                   >
                     {categorie.nom}
                   </div>
-                  <div className="mt-0.5 text-[12px] text-slate-400 dark:text-slate-500">
+                  {/* ⭐ TEXT-[11px] ID - MITOVY AMIN'NY FOURNISSEURS */}
+                  <div className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
                     ID #{String(categorie.id).padStart(3, '0')}
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col items-end text-[12px] text-slate-400 dark:text-slate-500">
-                <span>
-                  {categorie.created_at
-                    ? new Date(categorie.created_at).toLocaleDateString('fr-FR')
-                    : '—'}
-                </span>
+              <div className="flex flex-col items-end text-[11px] text-slate-400 dark:text-slate-500">
+                <div className="flex items-center gap-1">
+                  <CalendarDays size={11} />
+                  <span>
+                    {categorie.created_at
+                      ? new Date(categorie.created_at).toLocaleDateString('fr-FR')
+                      : '—'}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Corps : description et nombre de produits */}
-            <div className="flex flex-1 flex-col p-4 pt-3 space-y-2">
+            {/* ⭐ BODY COMPACT (P-3, Text 13px) - MITOVY AMIN'NY FOURNISSEURS */}
+            <div className="flex flex-1 flex-col p-3 pt-2.5 space-y-1">
               <span
-                className="line-clamp-2 text-[14px] text-slate-600 dark:text-slate-300"
+                className="line-clamp-2 text-[13px] text-slate-600 dark:text-slate-300"
                 title={categorie.description || ''}
               >
                 {categorie.description || (
@@ -128,49 +133,49 @@ const CategoriesGrid: React.FC<CategoriesGridProps> = ({
                 )}
               </span>
 
-              {/* Badge produits */}
+              {/* Badge produits (COMPACT) */}
               <div className="mt-1 flex items-center gap-2">
                 <span
-                  className={`inline-flex min-w-[40px] items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[13px] font-semibold transition-all ${
+                  className={`inline-flex min-w-[32px] items-center justify-center gap-1 rounded-md border px-1.5 py-0.5 text-[12px] font-semibold transition-all ${
                     hasProducts
                       ? 'border-indigo-100 bg-indigo-50 text-indigo-700 dark:border-indigo-500/10 dark:bg-indigo-500/10 dark:text-indigo-300'
                       : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-400'
                   }`}
                 >
-                  <Package size={13} strokeWidth={1.8} />
+                  <Package size={11} strokeWidth={1.8} />
                   {nbProduits}
                 </span>
-                <span className="text-[12px] text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
                   produit{nbProduits > 1 ? 's' : ''}
                 </span>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="mt-3 flex items-center gap-2 border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+            {/* ⭐ ACTIONS COMPACT (H-8) - MITOVY AMIN'NY FOURNISSEURS */}
+            <div className="mt-2 flex items-center gap-1.5 border-t border-slate-200 px-3 py-2.5 dark:border-slate-700">
               <button
                 type="button"
                 title="Voir la catégorie"
                 onClick={() => onView(categorie)}
-                className="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-slate-600 transition hover:bg-indigo-100 hover:text-indigo-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"
+                className="flex h-8 flex-1 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition hover:bg-indigo-100 hover:text-indigo-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"
               >
-                <Eye size={16} className="mx-auto" />
+                <Eye size={14} />
               </button>
               <button
                 type="button"
                 title="Modifier"
                 onClick={() => onEdit(categorie)}
-                className="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-slate-600 transition hover:bg-amber-100 hover:text-amber-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
+                className="flex h-8 flex-1 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition hover:bg-amber-100 hover:text-amber-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
               >
-                <Edit size={16} className="mx-auto" />
+                <Edit size={14} />
               </button>
               <button
                 type="button"
                 title="Supprimer"
                 onClick={() => onDelete(categorie)}
-                className="flex-1 rounded-lg bg-rose-100 px-3 py-2 text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-800/50"
+                className="flex h-8 flex-1 items-center justify-center rounded-md bg-rose-100 text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-800/50"
               >
-                <Trash2 size={16} className="mx-auto" />
+                <Trash2 size={14} />
               </button>
             </div>
           </div>

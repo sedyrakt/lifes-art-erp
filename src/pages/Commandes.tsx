@@ -472,6 +472,9 @@ const Commandes: React.FC = () => {
                 onDelete={handleDeleteClick}
                 getStatusColor={getStatusColor}
                 getStatusIcon={getStatusIcon}
+                clientImageUrls={clientImageUrls}
+                clientImageErrors={clientImageErrors}
+                handleClientImageError={handleClientImageError}
                 isDark={isDark}
               />
             )

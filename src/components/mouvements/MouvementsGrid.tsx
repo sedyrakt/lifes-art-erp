@@ -60,7 +60,7 @@ const MouvementsGrid: React.FC<MouvementsGridProps> = ({ mouvements, getTypeColo
     </div>);
   }
 
-  return (<div className={`grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 ${isDark ? 'bg-[#111c30]' : 'bg-white'}`}>
+  return (<div className={`grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 ${isDark ? 'bg-[#111c30]' : 'bg-white'}`}>
     {mouvements.filter(Boolean).map((mouvement) => {
       const type = normalizeMovementType(mouvement.type_mouvement);
       const isEntree = type.includes('ENTREE'); const isSortie = type.includes('SORTIE');
@@ -77,20 +77,62 @@ const MouvementsGrid: React.FC<MouvementsGridProps> = ({ mouvements, getTypeColo
       else if (isSortie) { quantityConfig = { prefix: '-', wrapper: 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400', icon: <ArrowUp size={12} /> }; }
       else { quantityConfig = { prefix: '±', wrapper: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400', icon: <Activity size={12} /> }; }
 
-      return (<div key={mouvement.id} className={`group relative flex flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 hover:shadow-md ${isDark ? 'border-white/[0.10] bg-[#111c30] hover:border-white/[0.20]' : 'border-slate-200 bg-white hover:border-indigo-200'}`}>
-        <div className="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-          {imageUrl ? (<img src={imageUrl} alt={productName} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />) : (<div className="flex h-full w-full items-center justify-center bg-indigo-50 dark:bg-indigo-500/10"><div className="flex flex-col items-center gap-1"><Package size={32} className="text-indigo-400 dark:text-indigo-300" /><span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{productName.charAt(0).toUpperCase()}</span></div></div>)}
-          <div className="absolute right-2 top-2"><span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-semibold ${getTypeColor(mouvement.type_mouvement)}`}>{getTypeIcon(mouvement.type_mouvement)}{getTypeLabel(mouvement.type_mouvement)}</span></div>
-        </div>
-        <div className="flex flex-1 flex-col p-4">
-          <div className="mb-1 flex items-start justify-between"><h4 className="text-[15px] font-semibold text-slate-900 line-clamp-2 dark:text-slate-100" title={productName}>{productName}</h4><div className="flex items-center gap-1 text-[12px] text-slate-400 dark:text-slate-500"><CalendarDays size={14} className="shrink-0" /><span title={`${dateDisplay} ${timeDisplay}`}>{dateDisplay}</span></div></div>
-          <div className="flex items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400"><Hash size={14} className="shrink-0" /><span className="truncate font-mono">{productCode}</span></div>
-          <div className="mt-2 flex items-center justify-between">
-            <div className="flex flex-col"><span className="text-[12px] text-slate-400 dark:text-slate-500">Quantité</span><span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[14px] font-semibold ${quantityConfig.wrapper}`}>{quantityConfig.icon}{quantityConfig.prefix}{formatNumber(quantite)}</span></div>
-            <div className="flex flex-col items-end"><span className="text-[12px] text-slate-400 dark:text-slate-500">Stock</span><div className="flex items-center gap-1.5 text-[13px] font-medium text-slate-600 dark:text-slate-300"><span className="rounded-md bg-slate-100 px-2 py-0.5 dark:bg-slate-800">{formatNumber(ancienStock)}</span><ChevronRight size={14} className="shrink-0 text-slate-300 dark:text-slate-600" /><span className="rounded-md bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400">{formatNumber(nouveauStock)}</span></div></div>
+      return (<div key={mouvement.id} className={`group relative flex flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md ${isDark ? 'border-white/[0.10] bg-[#111c30] hover:border-white/[0.20]' : 'border-slate-200 bg-white hover:border-indigo-200'}`}>
+        
+        {/* PHOTO (COMPACT: H-36) */}
+        <div className="relative h-36 w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800">
+          {imageUrl ? (<img src={imageUrl} alt={productName} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />) : (<div className="flex h-full w-full items-center justify-center bg-indigo-50 dark:bg-indigo-500/10"><div className="flex flex-col items-center gap-1"><Package size={28} className="text-indigo-400 dark:text-indigo-300" /><span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{productName.charAt(0).toUpperCase()}</span></div></div>)}
+          
+          {/* CALQUE (OVERLAY) */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+          {/* BADGE TYPE (COMPACT + BLUR) */}
+          <div className="absolute right-2 top-2 z-10">
+            <span className={`inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[12px] font-semibold text-white shadow-sm backdrop-blur-md`}>
+              {getTypeIcon(mouvement.type_mouvement)}{getTypeLabel(mouvement.type_mouvement)}
+            </span>
           </div>
-          <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 dark:border-slate-700"><div className="flex flex-col"><span className="text-[12px] text-slate-400 dark:text-slate-500">Prix unitaire</span><span className="text-[15px] font-semibold text-indigo-600 dark:text-indigo-400">{formatMoney(price)}</span></div><div className="flex flex-col items-end"><span className="text-[12px] text-slate-400 dark:text-slate-500">Réf.</span><span className="text-[13px] font-mono text-slate-600 dark:text-slate-300 truncate max-w-[80px]">{reference}</span></div></div>
-          <div className="mt-4 flex items-center gap-2 border-t border-slate-200 pt-3 dark:border-slate-700"><button type="button" title="Voir les détails" onClick={() => onView?.(mouvement)} className="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-slate-600 transition hover:bg-indigo-100 hover:text-indigo-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"><Eye size={16} className="mx-auto" /></button>{(onDelete || onBulkDelete) && (<button type="button" title="Supprimer" onClick={() => { if (onDelete) onDelete(mouvement.id); else if (onBulkDelete) onBulkDelete([mouvement.id]); }} className="flex-1 rounded-lg bg-rose-100 px-3 py-2 text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-800/50"><Trash2 size={16} className="mx-auto" /></button>)}</div>
+        </div>
+
+        {/* BODY (COMPACT P-3) */}
+        <div className="flex flex-1 flex-col p-3">
+          <div className="mb-1 flex items-start justify-between">
+            <h4 className="text-[14px] font-semibold text-slate-900 line-clamp-1 dark:text-slate-100" title={productName}>{productName}</h4>
+            <div className="flex items-center gap-1 text-[12px] text-slate-400 dark:text-slate-500"><CalendarDays size={13} className="shrink-0" /><span title={`${dateDisplay} ${timeDisplay}`}>{dateDisplay}</span></div>
+          </div>
+          <div className="flex items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400"><Hash size={13} className="shrink-0" /><span className="truncate font-mono">{productCode}</span></div>
+          
+          <div className="mt-2 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[12px] text-slate-400 dark:text-slate-500">Quantité</span>
+              <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[13px] font-semibold ${quantityConfig.wrapper}`}>{quantityConfig.icon}{quantityConfig.prefix}{formatNumber(quantite)}</span>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[12px] text-slate-400 dark:text-slate-500">Stock</span>
+              <div className="flex items-center gap-1 text-[13px] font-medium text-slate-600 dark:text-slate-300">
+                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">{formatNumber(ancienStock)}</span>
+                <ChevronRight size={13} className="shrink-0 text-slate-300 dark:text-slate-600" />
+                <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 font-semibold text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400">{formatNumber(nouveauStock)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 dark:border-slate-700">
+            <div className="flex flex-col">
+              <span className="text-[12px] text-slate-400 dark:text-slate-500">Prix unitaire</span>
+              <span className="text-[14px] font-semibold text-indigo-600 dark:text-indigo-400">{formatMoney(price)}</span>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[12px] text-slate-400 dark:text-slate-500">Réf.</span>
+              <span className="text-[13px] font-mono text-slate-600 dark:text-slate-300 truncate max-w-[80px]">{reference}</span>
+            </div>
+          </div>
+          
+          {/* ACTIONS COMPACT (H-8) */}
+          <div className="mt-3 flex items-center gap-1.5 border-t border-slate-200 pt-2.5 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+            <button type="button" title="Voir les détails" onClick={() => onView?.(mouvement)} className="flex h-8 flex-1 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition hover:bg-indigo-100 hover:text-indigo-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"><Eye size={15} className="mx-auto" /></button>
+            {(onDelete || onBulkDelete) && (<button type="button" title="Supprimer" onClick={() => { if (onDelete) onDelete(mouvement.id); else if (onBulkDelete) onBulkDelete([mouvement.id]); }} className="flex h-8 flex-1 items-center justify-center rounded-md bg-rose-100 text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-800/50"><Trash2 size={15} className="mx-auto" /></button>)}
+          </div>
         </div>
       </div>);
     })}

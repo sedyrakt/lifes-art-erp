@@ -55,7 +55,7 @@ const SortiesGrid: React.FC<SortiesGridProps> = ({
   }
 
   return (
-    <div className={`grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 ${isDark ? 'bg-[#111c30]' : 'bg-white'}`}>
+    <div className={`grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 ${isDark ? 'bg-[#111c30]' : 'bg-white'}`}>
       {sorties.filter(Boolean).map((sortie) => {
         const imageUrl = imageUrls[sortie.id] ?? sortie.produit_image ?? null;
         const quantite = Number(sortie.quantite) || 0;
@@ -72,27 +72,38 @@ const SortiesGrid: React.FC<SortiesGridProps> = ({
             key={sortie.id}
             // ⭐ CLIC CARD -> MODAL
             onClick={() => onView(sortie)}
-            className={`group relative flex flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer ${isDark ? 'border-white/[0.10] bg-[#111c30] hover:border-white/[0.20]' : 'border-slate-200 bg-white hover:border-indigo-200'}`}
+            className={`group relative flex flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer ${isDark ? 'border-white/[0.10] bg-[#111c30] hover:border-white/[0.20]' : 'border-slate-200 bg-white hover:border-indigo-200'}`}
           >
-            <div className="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-              {imageUrl ? <img src={imageUrl} alt={productName} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /> : <div className="flex h-full w-full items-center justify-center bg-indigo-50 dark:bg-indigo-500/10"><div className="flex flex-col items-center gap-1"><Package size={32} className="text-indigo-400 dark:text-indigo-300" /><span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{productName.charAt(0).toUpperCase()}</span></div></div>}
-              <div className="absolute right-2 top-2"><span className="inline-flex items-center gap-1 rounded-full bg-rose-500/90 px-2 py-0.5 text-[12px] font-bold text-white shadow-sm backdrop-blur-sm"><ArrowUp size={12} />-{formatQuantity(quantite)}</span></div>
+            {/* PHOTO (COMPACT: H-36) */}
+            <div className="relative h-36 w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800">
+              {imageUrl ? <img src={imageUrl} alt={productName} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /> : <div className="flex h-full w-full items-center justify-center bg-indigo-50 dark:bg-indigo-500/10"><div className="flex flex-col items-center gap-1"><Package size={28} className="text-indigo-400 dark:text-indigo-300" /><span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{productName.charAt(0).toUpperCase()}</span></div></div>}
+              
+              {/* CALQUE (OVERLAY) */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+              {/* BADGE QUANTITÉ (COMPACT + BLUR) */}
+              <div className="absolute right-2 top-2 z-10">
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm backdrop-blur-md"><ArrowUp size={11} />-{formatQuantity(quantite)}</span>
+              </div>
             </div>
 
-            <div className="flex flex-1 flex-col p-4">
+            {/* BODY (COMPACT P-3) */}
+            <div className="flex flex-1 flex-col p-3">
               <div className="mb-1 flex items-start justify-between">
-                <h4 className="text-[14.5px] font-semibold text-slate-900 line-clamp-2 dark:text-slate-100" title={productName}>{productName}</h4>
-                <div className="flex items-center gap-1 text-[12px] text-slate-400 dark:text-slate-500"><CalendarDays size={14} className="shrink-0" /><span title={`${dateDisplay} ${timeDisplay}`}>{dateDisplay}</span></div>
+                <h4 className="text-[14px] font-semibold text-slate-900 line-clamp-1 dark:text-slate-100" title={productName}>{productName}</h4>
+                <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500"><CalendarDays size={12} className="shrink-0" /><span title={`${dateDisplay} ${timeDisplay}`}>{dateDisplay}</span></div>
               </div>
-              <div className="flex items-center gap-2 text-[14.5px] text-slate-500 dark:text-slate-400"><Hash size={14} className="shrink-0" /><span className="truncate font-mono">{productCode}</span></div>
-              <div className="mt-1 flex items-center gap-2 text-[14.5px] text-slate-500 dark:text-slate-400"><MapPin size={14} className="shrink-0" /><span className="truncate">{destination}</span></div>
+              <div className="flex items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400"><Hash size={13} className="shrink-0" /><span className="truncate font-mono">{productCode}</span></div>
+              <div className="mt-1 flex items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400"><MapPin size={13} className="shrink-0" /><span className="truncate">{destination}</span></div>
               <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 dark:border-slate-700">
-                <div className="flex flex-col"><span className="text-[12px] text-slate-400 dark:text-slate-500">Prix unitaire</span><span className="text-[14.5px] font-semibold text-indigo-600 dark:text-indigo-400">{formatMoney(prix)}</span></div>
-                <div className="flex flex-col items-end"><span className="text-[12px] text-slate-400 dark:text-slate-500">Réf.</span><span className="text-[14.5px] font-mono text-slate-600 dark:text-slate-300 truncate max-w-[80px]">{reference}</span></div>
+                <div className="flex flex-col"><span className="text-[11px] text-slate-400 dark:text-slate-500">Prix unitaire</span><span className="text-[14px] font-semibold text-indigo-600 dark:text-indigo-400">{formatMoney(prix)}</span></div>
+                <div className="flex flex-col items-end"><span className="text-[11px] text-slate-400 dark:text-slate-500">Réf.</span><span className="text-[13px] font-mono text-slate-600 dark:text-slate-300 truncate max-w-[80px]">{reference}</span></div>
               </div>
-              <div className="mt-4 flex items-center gap-2 border-t border-slate-200 pt-3 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-                <button type="button" title="Voir les détails" onClick={() => onView(sortie)} className="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-slate-600 transition hover:bg-indigo-100 hover:text-indigo-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"><Eye size={16} className="mx-auto" /></button>
-                {(onDelete || onBulkDelete) && <button type="button" title="Supprimer" onClick={() => { if (onDelete) onDelete(sortie.id); else if (onBulkDelete) onBulkDelete([sortie.id]); }} className="flex-1 rounded-lg bg-rose-100 px-3 py-2 text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-800/50"><Trash2 size={16} className="mx-auto" /></button>}
+              
+              {/* ACTIONS COMPACT (H-8) */}
+              <div className="mt-3 flex items-center gap-1.5 border-t border-slate-200 pt-2.5 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+                <button type="button" title="Voir les détails" onClick={() => onView(sortie)} className="flex h-8 flex-1 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition hover:bg-indigo-100 hover:text-indigo-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"><Eye size={14} className="mx-auto" /></button>
+                {(onDelete || onBulkDelete) && <button type="button" title="Supprimer" onClick={() => { if (onDelete) onDelete(sortie.id); else if (onBulkDelete) onBulkDelete([sortie.id]); }} className="flex h-8 flex-1 items-center justify-center rounded-md bg-rose-100 text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-800/50"><Trash2 size={14} className="mx-auto" /></button>}
               </div>
             </div>
           </div>

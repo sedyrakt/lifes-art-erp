@@ -3,16 +3,33 @@ import React from 'react';
 import { TrendingDown, FileText, DollarSign, Building, Loader2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { formatMoney } from '../../lib/formatMoney';
 
-interface DepensesStatsProps { total: number; nb: number; moyenne: number; nbFournisseurs: number; evolutionTotal?: number; evolutionNb?: number; evolutionMoyenne?: number; evolutionFournisseurs?: number; refreshing?: boolean; }
+interface DepensesStatsProps { 
+  total: number; 
+  nb: number; 
+  moyenne: number; 
+  nbFournisseurs: number; 
+  totalItems?: number; // ⭐ NAMPIANA
+  evolutionTotal?: number; 
+  evolutionNb?: number; 
+  evolutionMoyenne?: number; 
+  evolutionFournisseurs?: number; 
+  refreshing?: boolean; 
+}
+
 const safeNumber = (value: unknown): number => { const number = Number(value); return Number.isFinite(number) ? number : 0; };
 
-const DepensesStats: React.FC<DepensesStatsProps> = ({ total, nb, moyenne, nbFournisseurs, evolutionTotal = 0, evolutionNb = 0, evolutionMoyenne = 0, evolutionFournisseurs = 0, refreshing = false }) => {
+const DepensesStats: React.FC<DepensesStatsProps> = ({ total, nb, moyenne, nbFournisseurs, totalItems, evolutionTotal = 0, evolutionNb = 0, evolutionMoyenne = 0, evolutionFournisseurs = 0, refreshing = false }) => {
+  
+  // ⭐ FIX: Mampiasa ny totalItems raha misy, fa raha tsy misy dia ny nb no ampiasaina
+  const displayNb = totalItems !== undefined ? totalItems : safeNumber(nb);
+
   const stats = [
     { label: 'Total Dépenses', value: formatMoney(safeNumber(total)), icon: TrendingDown, evolution: safeNumber(evolutionTotal), iconClass: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400' },
-    { label: 'Nombre', value: safeNumber(nb).toLocaleString('fr-FR'), icon: FileText, evolution: safeNumber(evolutionNb), iconClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' },
+    { label: 'Nombre', value: displayNb.toLocaleString('fr-FR'), icon: FileText, evolution: safeNumber(evolutionNb), iconClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' },
     { label: 'Moyenne', value: formatMoney(safeNumber(moyenne)), icon: DollarSign, evolution: safeNumber(evolutionMoyenne), iconClass: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400' },
     { label: 'Fournisseurs', value: safeNumber(nbFournisseurs).toLocaleString('fr-FR'), icon: Building, evolution: safeNumber(evolutionFournisseurs), iconClass: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400' },
   ];
+
   return (<div className="relative mb-5 w-full">
     {refreshing && (<div className="absolute right-0 top-0 z-20 flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-indigo-600 shadow-sm animate-pulse dark:border-slate-700 dark:bg-[#0F172A] dark:text-indigo-400"><Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2} /><span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Mise à jour...</span></div>)}
     <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

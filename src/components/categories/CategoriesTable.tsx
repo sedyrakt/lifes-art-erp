@@ -1,16 +1,14 @@
 // ============================================================
 // src/components/categories/CategoriesTable.tsx
 // ============================================================
-// ⭐ PREMIUM ERP TABLE
-// ⭐ ALL BORDER TABLE
-// ⭐ Medium / readable typography
-// ⭐ Professional spacing
-// ⭐ Dark / Light mode
-// ⭐ Sticky header
-// ⭐ Row hover + selected state
-// ⭐ Bulk selection
-// ⭐ Floating action menu
-// ⭐ Responsive horizontal scroll
+// ⭐ PREMIUM ERP TABLE (MITOVY TYPOGRAPHY AMIN'NY FOURNISSEURS)
+// ⭐ ALL BORDER SYSTEM (identique à CategoriesTable)
+// ⭐ MEDIUM / READABLE FONT SIZE
+// ⭐ DARK + LIGHT MODE
+// ⭐ PREMIUM HOVER / SELECT STATES
+// ⭐ BULK ACTIONS
+// ⭐ PORTAL ACTION MENU
+// ⭐ RESPONSIVE HORIZONTAL SCROLL
 // ============================================================
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -220,21 +218,21 @@ const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onView, o
             ⭐ border-collapse = ALL BORDER
         ===================================================== */}
 
-        <table className={`w-full min-w-[960px] table-fixed border border-collapse text-left ${borderColor}`}>
+        <table className={`w-full min-w-[950px] table-fixed border border-collapse text-left ${borderColor}`}>
           {/* ==================================================
               HEADER
           =================================================== */}
 
           <thead className={`sticky top-0 z-20 backdrop-blur-xl ${isDark ? 'bg-[#111c30]/97' : 'bg-slate-50/97'}`}>
             <tr className="text-[12px] font-semibold uppercase tracking-[0.055em] text-slate-500 dark:text-slate-400">
-              <th scope="col" className={`w-[58px] border px-4 py-4 align-middle ${headerBorderColor}`}>
+              <th scope="col" className={`w-[48px] border px-3 py-4 align-middle ${headerBorderColor}`}>
                 <input type="checkbox" checked={allSelected} ref={(input) => { if (input) input.indeterminate = someSelected; }} onChange={(event) => onSelectAll?.(event.target.checked)} className="h-[17px] w-[17px] cursor-pointer rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-indigo-500/30 dark:border-slate-600" aria-label="Sélectionner toutes les catégories" />
               </th>
-              <th scope="col" className={`w-[280px] border px-5 py-4 ${headerBorderColor}`}>Catégorie</th>
-              <th scope="col" className={`w-[330px] border px-5 py-4 ${headerBorderColor}`}>Description</th>
-              <th scope="col" className={`w-[140px] border px-5 py-4 ${headerBorderColor}`}>Produits</th>
-              <th scope="col" className={`w-[155px] border px-5 py-4 ${headerBorderColor}`}>Créée le</th>
-              <th scope="col" className={`w-[105px] border px-4 py-4 text-right ${headerBorderColor}`}>Actions</th>
+              <th scope="col" className={`w-[260px] border px-5 py-4 ${headerBorderColor}`}>Catégorie</th>
+              <th scope="col" className={`w-[320px] border px-5 py-4 ${headerBorderColor}`}>Description</th>
+              <th scope="col" className={`w-[130px] border px-5 py-4 ${headerBorderColor}`}>Produits</th>
+              <th scope="col" className={`w-[150px] border px-5 py-4 ${headerBorderColor}`}>Créée le</th>
+              <th scope="col" className={`w-[88px] border px-4 py-4 text-right ${headerBorderColor}`}>Actions</th>
             </tr>
           </thead>
 
@@ -250,18 +248,18 @@ const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onView, o
               return (
                 <tr key={categorie.id} onClick={() => { setOpenMenuId(null); onView(categorie); }} className={`group h-[64px] cursor-pointer transition-all duration-150 ${isSelected ? (isDark ? 'bg-indigo-500/[0.085]' : 'bg-indigo-50/80') : isDark ? 'hover:bg-white/[0.025]' : 'hover:bg-slate-50/80'}`}>
                   {/* CHECKBOX */}
-                  <td className={`border px-4 py-3 align-middle ${cellBorderColor}`} onClick={(event) => event.stopPropagation()}>
+                  <td className={`border px-3 py-3 align-middle ${cellBorderColor}`} onClick={(event) => event.stopPropagation()}>
                     <input type="checkbox" checked={isSelected} onChange={(event) => onSelectOne?.(categorie.id, event.target.checked)} className="h-[17px] w-[17px] cursor-pointer rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-indigo-500/30 dark:border-slate-600" aria-label={`Sélectionner ${categorie.nom}`} />
                   </td>
                   {/* CATEGORY */}
                   <td className={`border px-5 py-3 align-middle ${cellBorderColor}`}>
                     <div className="flex min-w-0 items-center gap-3.5">
-                      <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-600 shadow-sm transition-all duration-150 group-hover:border-indigo-200 group-hover:bg-indigo-100 group-hover:shadow-md dark:border-indigo-500/15 dark:bg-indigo-500/10 dark:text-indigo-400 dark:group-hover:bg-indigo-500/15">
-                        <Folder size={19} strokeWidth={1.8} />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-600 shadow-sm transition-all duration-150 group-hover:border-indigo-200 group-hover:bg-indigo-100 group-hover:shadow-md dark:border-indigo-500/15 dark:bg-indigo-500/10 dark:text-indigo-400 dark:group-hover:bg-indigo-500/15">
+                        <Folder size={18} strokeWidth={1.8} />
                       </div>
                       <div className="min-w-0">
                         <div title={categorie.nom} className="truncate text-[15px] font-semibold leading-5 text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-400">{categorie.nom}</div>
-                        <div className="mt-1 text-[12px] font-medium text-slate-400 dark:text-slate-500">ID #{String(categorie.id).padStart(3, '0')}</div>
+                        <div className="mt-0.5 text-[12px] font-medium text-slate-400 dark:text-slate-500">ID #{String(categorie.id).padStart(3, '0')}</div>
                       </div>
                     </div>
                   </td>
@@ -284,7 +282,7 @@ const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onView, o
                   <td className={`border px-5 py-3 align-middle ${cellBorderColor}`}>
                     <div className="flex flex-col leading-tight">
                       <span className="text-[14px] font-medium text-slate-700 dark:text-slate-300">{new Date(categorie.created_at).toLocaleDateString('fr-FR')}</span>
-                      <span className="mt-1 text-[12px] font-medium text-slate-400 dark:text-slate-500">{new Date(categorie.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="mt-0.5 text-[12px] font-medium text-slate-400 dark:text-slate-500">{new Date(categorie.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </td>
                   {/* ACTIONS */}

@@ -23,7 +23,12 @@ const StartupGate: React.FC<StartupGateProps> = ({ children }) => {
           <div className="relative">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#6366F1]/30 border-t-[#6366F1]"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl text-[#6366F1]">⚡</span>
+              {/* ⭐ SOLOINA: Logo an'ny Life's Art fa tsy ⚡ */}
+              <img 
+                src="/logo.png" 
+                alt="Life's Art" 
+                className="h-10 w-10 object-contain"
+              />
             </div>
           </div>
           <p className="font-medium text-gray-500 dark:text-gray-400">
