@@ -2,13 +2,7 @@
 const { app, BrowserWindow, ipcMain, session, shell, protocol, Menu, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-// ⭐ VAOVAO: Nampidirina ny dotenv eto aloha mba hahita ny .env
-const dotenv = require('dotenv');
-
-// ⭐ FANITSARA: Mampiasa ny app.getAppPath() mba hahita tsara ilay .env na dia ao anaty asar aza
-dotenv.config({
-  path: path.join(app.getAppPath(), '.env')
-});
+// ⭐ ESORY NY dotenv SATRIA TSY ILANA INTSONY
 
 const { initDatabase, closeDatabase } = require('./database/init.cjs');
 const { getDb, getDbPath, getDatabaseDebugInfo } = require('./database/connection.cjs');
@@ -28,10 +22,8 @@ function mainLog(...args) { console.log('[MAIN]', ...args); }
 function mainWarn(...args) { console.warn('[MAIN]', ...args); }
 function mainError(...args) { console.error('[MAIN]', ...args); }
 
-// ⭐ FANITSARA: Fanamarinana aloha mba hahita raha misy ilay .env
-mainLog('🔐 JWT_SECRET loaded:', Boolean(process.env.JWT_SECRET));
-mainLog('📦 APP PATH:', app.getAppPath());
-mainLog('📄 ENV PATH:', path.join(app.getAppPath(), '.env'));
+// ⭐ FANITSARA: Nesoriko ny fanamarinana ny .env satria efa tao anaty code mivantana
+mainLog('🔐 JWT_SECRET: Hardcoded (no .env dependency)');
 
 function printDatabaseInfo() {
   try {
@@ -202,7 +194,6 @@ function registerHandlerModule(label, modulePath) {
     const absolutePath = path.resolve(__dirname, modulePath);
     if (!fs.existsSync(absolutePath)) { mainWarn(`⚠️ Handler ${label} introuvable:`, absolutePath); return false; }
     const handler = require(absolutePath);
-    // ⭐ FANITSARA: Fanamarinana ilay module vao nampidirina
     mainLog(`📦 [${label}] Module loaded: ${absolutePath}`);
     mainLog(`📦 [${label}] Exports:`, handler && typeof handler === 'object' ? Object.keys(handler) : typeof handler);
     

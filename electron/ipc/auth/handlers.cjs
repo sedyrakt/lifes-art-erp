@@ -1,6 +1,6 @@
 // ============================================================
 // electron/ipc/auth/handlers.cjs - COMPACT + RETURN TRUE
-// ⭐ FANITSARA: Nesoriko ny require('dotenv').config() satria efa atao ao main.cjs
+// ⭐ VERSION FINALE SANS DOTENV (Hardcoded JWT_SECRET)
 // ============================================================
 'use strict';
 
@@ -16,16 +16,21 @@ const { normalizeEmail, normalizeRow, normalizeRows } = require('./validation.cj
 
 const statementsModule = require('./statements.cjs');
 
-// ⭐ FANITSARA: process.env dia efa voaload tao main.cjs
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) { error('❌ JWT_SECRET manquant dans process.env'); throw new Error('❌ JWT_SECRET manquant dans process.env'); }
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
-const SESSION_EXPIRY_HOURS = parseInt(process.env.SESSION_EXPIRY_HOURS) || 24;
-const TWO_FACTOR_ENABLED = process.env.TWO_FACTOR_ENABLED !== 'false';
-const TWO_FACTOR_WINDOW = parseInt(process.env.TWO_FACTOR_WINDOW) || 1;
-const TWO_FACTOR_APP_NAME = process.env.TWO_FACTOR_APP_NAME || 'FITAIA';
-const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
+// ============================================================
+// ⭐ CONSTANTES DE SÉCURITÉ (Hardcoded pour éviter les erreurs de .env en production)
+// ============================================================
+// 🛑 Tsy miankina amin'ny .env intsony ireto! Raha te hanova azy ianao dia eto no tokony hatao.
+const JWT_SECRET = 'upA8lN2MfcFQBPge8AbGSRQDVGRwXuqFnfb3B0xh1+2l2oiHmOKdMhoQvzwfv5aqE2Io4a+EFPEWPliSVyiXBQ==';
+const JWT_EXPIRES_IN = '24h';
+const SESSION_EXPIRY_HOURS = 24;
+const TWO_FACTOR_ENABLED = true;
+const TWO_FACTOR_WINDOW = 1;
+const TWO_FACTOR_APP_NAME = 'FITAIA';
+const BCRYPT_SALT_ROUNDS = 12;
 const DUMMY_HASH = '$2b$12$5zXG5vD4qXcJ3n7dQyX1UO9YwX8rA2fB3cD5eF6gH7iJ8kL9mN0oP';
+
+// ⭐ FANAMARINANA (Ho an'ny log)
+console.log('🔐 [auth] JWT_SECRET loaded:', JWT_SECRET ? true : false);
 
 const cleanupExpiredSessions = () => {
   try {
