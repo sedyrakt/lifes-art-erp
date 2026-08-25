@@ -7,15 +7,8 @@
   "description": "ERP de gestion de stock professionnel",
   "author": "Life's Art ERP <sdrrakt@gmail.com>",
   "license": "PROPRIETARY",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/lifesart/stock.git"
-  },
-  "bugs": {
-    "url": "https://github.com/lifesart/stock/issues"
-  },
-  "homepage": "https://lifesart.com",
   "desktopName": "lifes-art",
+  "homepage": "https://lifesart.com",
   "engines": {
     "node": ">=22.12.0",
     "npm": ">=10.0.0"

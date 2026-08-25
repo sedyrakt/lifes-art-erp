@@ -1,7 +1,7 @@
 # ============================================================
 # LIFE'S ART ERP
 # electron-builder.yml
-# ⭐ FIX: Ampiana ny desktopName sy synopsisDesktopName
+# ⭐ FIX: ESRINA NY desktopName sy synopsisDesktopName
 # ============================================================
 
 appId: com.lifesart.app
@@ -44,5 +44,3 @@ linux:
     - deb
   category: Office
   icon: public/logo.png
-  desktopName: lifes-art
-  synopsisDesktopName: Life's Art ERP
