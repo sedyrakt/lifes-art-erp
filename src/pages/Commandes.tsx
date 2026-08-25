@@ -19,24 +19,6 @@ import CommandesSearchBar from '../components/commandes/CommandesSearchBar';
 import CompanySettingsModal from '../components/company/CompanySettingsModal'; 
 import { downloadPDF } from '../lib/pdfService';
 
-const SORT_OPTIONS = [
-  { value: 'Date (Récent)', label: 'Date ↓' },
-  { value: 'Date (Ancien)', label: 'Date ↑' },
-  { value: 'Total (Décroissant)', label: 'Total ↓' },
-  { value: 'Total (Croissant)', label: 'Total ↑' },
-  { value: 'Client (A-Z)', label: 'Client (A-Z)' },
-  { value: 'Client (Z-A)', label: 'Client (Z-A)' }
-];
-
-const STATUT_OPTIONS = [
-  'Tous',
-  STATUS.PENDING,
-  STATUS.CONFIRMED,
-  STATUS.SHIPPED,
-  STATUS.DELIVERED,
-  STATUS.CANCELLED
-];
-
 const Commandes: React.FC = () => {
   const { isDark } = useTheme();
   const { company } = useCompany();
@@ -96,11 +78,22 @@ const Commandes: React.FC = () => {
   
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
+  // ⭐ FIX: Rehefa misafidy date iray ihany dia mitovy ny From sy To
+  const handleDateChange = useCallback((date: string) => {
+    if (date) {
+      setFilterDateFrom(date);
+      setFilterDateTo(date); // ⭐ Mitovy ihany
+    } else {
+      setFilterDateFrom('');
+      setFilterDateTo('');
+    }
+  }, [setFilterDateFrom, setFilterDateTo]);
+
   const getStatusColor = useCallback((status: string) => {
     const colors: Record<string, string> = {
       'En attente': 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
-      'Confirmée': 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-      'Expédiée': 'bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
+      'Confirmée': 'bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
+      'Expédiée': 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
       'Livrée': 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
       'Annulée': 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800',
     };
@@ -295,7 +288,7 @@ const Commandes: React.FC = () => {
   }, [selectedClientId, selectedProduits, createCommande, clearPanier, setSelectedClientId, showSuccess, showError]);
 
   // ============================================================
-  // ⭐ GESTION DE LA FACTURE
+  // ⭐ GESTION DE LA FACTURE - SINGLE PDF GENERATION
   // ============================================================
   const handleGenerateInvoiceClick = useCallback(async (commande: any) => {
     try {
@@ -346,7 +339,7 @@ const Commandes: React.FC = () => {
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       };
 
-      // ⭐ ILAY "ENREGISTRER SOUS" DIALOG NO MIVOAKA ETO
+      // ⭐ ILAY "ENREGISTRER SOUS" DIALOG NO MIVOAKA ETO (TOKANA)
       const pdfResult = await downloadPDF(pdfOptions);
       console.log('📄 Résultat de downloadPDF:', pdfResult);
 
@@ -360,9 +353,17 @@ const Commandes: React.FC = () => {
         console.error('❌ Erreur lors de l\'enregistrement du PDF:', pdfResult?.error);
         showError('Erreur', `Erreur lors de l'enregistrement du PDF: ${pdfResult?.error || 'Erreur inconnue'}`);
       }
+
+      // ⭐ RESULT FOR THE MODAL TO KNOW WHAT HAPPENED
+      return {
+        success: pdfResult?.success || false,
+        canceled: pdfResult?.canceled || false,
+        error: pdfResult?.error || undefined
+      };
     } catch (error: any) {
       console.error('❌ Erreur génération facture:', error);
       showError('Erreur', error.message || 'Erreur lors de la génération de la facture');
+      return { success: false, error: error.message };
     } finally {
       setGeneratingPDF(false);
       setShowCompanyModal(false);
@@ -376,7 +377,7 @@ const Commandes: React.FC = () => {
   return (
     <div 
       className="min-h-full w-full px-0 py-5 transition-colors duration-200 sm:px-0 lg:px-4" 
-      style={{ background: isDark ? '#0A1222' : '#F8FAFC' }}
+      style={{ background: isDark ? '#0F172A' : '#F8FAFC' }}
     >
       <div className="mx-auto w-full max-w-[1600px] space-y-5">
         
@@ -422,15 +423,16 @@ const Commandes: React.FC = () => {
           onSortChange={setSortOption}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          filterDateFrom={filterDateFrom}
-          onFilterDateFromChange={setFilterDateFrom}
-          filterDateTo={filterDateTo}
-          onFilterDateToChange={setFilterDateTo}
           isLoading={loading}
+          // ⭐ FIX: Mampiasa handleDateChange (mitovy ny From sy To)
+          filterDateFrom={filterDateFrom}
+          filterDateTo={filterDateTo}
+          onFilterDateFromChange={handleDateChange}
+          onFilterDateToChange={handleDateChange}
         />
 
         {/* ========== TABLE / GRID ========== */}
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-slate-800 dark:bg-[#0F172A]">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-white/[0.12] dark:bg-[#0F172A]">
           {loading && commandes.length === 0 ? (
             <div className="flex min-h-[360px] items-center justify-center">
               <div className="flex flex-col items-center gap-3">

@@ -1,53 +1,158 @@
 // ============================================================
-// src/components/StartupGate.tsx - VERSION PRODUCTION
-// ⭐ FANAPAHAN-KEVITRA TOKANA HO AN'NY NAVIGATION
-// ⭐ Mamaky ny AuthContext ihany (License nesorina)
+// src/components/StartupGate.tsx
+// ⭐ LIFE'S ART ERP
+// ⭐ INITIAL ROUTING ONLY
+// ⭐ FIX: Rehefa tsy misy license, dia manao redirection any amin'ny /license
 // ============================================================
 
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import React, {
+  useEffect,
+  useRef,
+} from 'react';
 
-interface StartupGateProps {
-  children?: React.ReactNode;
-}
+import {
+  useNavigate,
+} from 'react-router-dom';
 
-const StartupGate: React.FC<StartupGateProps> = ({ children }) => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+import {
+  useAuth,
+} from '../contexts/AuthContext';
 
-  // ⭐ Mbola mitady ny Auth (License ihany no nesorina)
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#6366F1]/30 border-t-[#6366F1]"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              {/* ⭐ SOLOINA: Logo an'ny Life's Art fa tsy ⚡ */}
-              <img 
-                src="/logo.png" 
-                alt="Life's Art" 
-                className="h-10 w-10 object-contain"
-              />
-            </div>
-          </div>
-          <p className="font-medium text-gray-500 dark:text-gray-400">
-            Chargement de l'application...
-          </p>
-        </div>
-      </div>
+import {
+  useLicense,
+} from '../contexts/LicenseContext';
+
+import {
+  Loader2,
+} from 'lucide-react';
+
+// ============================================================
+// COMPONENT
+// ============================================================
+
+const StartupGate: React.FC = () => {
+  const navigate = useNavigate();
+
+  const {
+    user,
+    isLoading: authLoading,
+  } = useAuth();
+
+  const {
+    status: licenseStatus,
+    isValid: licenseIsValid,
+    isLoading: licenseLoading,
+    refresh: refreshLicense, // ⭐ FIX: Ampidirina ny refreshLicense
+  } = useLicense();
+
+  const redirectedRef = useRef(false);
+
+  // ==========================================================
+  // REFRESH LICENSE AU DÉMARRAGE
+  // ==========================================================
+
+  useEffect(() => {
+    // ⭐ FIX: Refresher ny license rehefa monté
+    refreshLicense();
+  }, [refreshLicense]);
+
+  // ==========================================================
+  // STARTUP ROUTING
+  // ==========================================================
+
+  useEffect(() => {
+    if (redirectedRef.current) {
+      return;
+    }
+
+    // ========================================================
+    // WAIT LICENSE
+    // ========================================================
+
+    if (licenseLoading) {
+      return;
+    }
+
+    // ========================================================
+    // WAIT AUTH
+    // ========================================================
+
+    if (authLoading) {
+      return;
+    }
+
+    redirectedRef.current = true;
+
+    // ========================================================
+    // NO LICENSE - ⭐ FIX: Miverina any amin'ny /license
+    // ========================================================
+
+    if (
+      licenseStatus !== 'VALID' ||
+      !licenseIsValid
+    ) {
+      console.log(
+        '🔐 [StartupGate] Licence invalide → /license'
+      );
+
+      navigate('/license', {
+        replace: true,
+      });
+
+      return;
+    }
+
+    // ========================================================
+    // LICENSE OK + NO USER
+    // ========================================================
+
+    if (!user) {
+      console.log(
+        '🔑 [StartupGate] Licence OK → /login'
+      );
+
+      navigate('/login', {
+        replace: true,
+      });
+
+      return;
+    }
+
+    // ========================================================
+    // LICENSE OK + AUTH OK
+    // ========================================================
+
+    console.log(
+      '🚀 [StartupGate] Licence + Auth OK → /dashboard'
     );
-  }
 
-  // ⭐ 1. Efa niditra → /dashboard
-  if (isAuthenticated) {
-    console.log('🔀 [StartupGate] → /dashboard');
-    return <Navigate to="/dashboard" replace />;
-  }
+    navigate('/dashboard', {
+      replace: true,
+    });
+  }, [
+    licenseLoading,
+    licenseStatus,
+    licenseIsValid,
+    authLoading,
+    user,
+    navigate,
+  ]);
 
-  // ⭐ 2. Tsy niditra → /login
-  console.log('🔀 [StartupGate] → /login');
-  return <Navigate to="/login" replace />;
+  // ==========================================================
+  // UI
+  // ==========================================================
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="text-center">
+        <Loader2 className="mx-auto h-8 w-8 animate-spin text-rose-500" />
+
+        <p className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+          Vérification de la licence...
+        </p>
+      </div>
+    </div>
+  );
 };
 
 export default StartupGate;

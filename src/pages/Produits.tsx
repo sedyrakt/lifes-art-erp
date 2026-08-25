@@ -1,3 +1,4 @@
+// src/pages/Produits.tsx
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { CheckCircle, XCircle, Plus, RefreshCw } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
@@ -310,7 +311,7 @@ const Produits: React.FC = () => {
   }, [resetImageState]);
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-6 px-1 py-6 transition-colors duration-300 sm:px-0 lg:px-4" style={{ background: isDark ? '#0A1222' : '#F8FAFC' }}>
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 px-1 py-6 transition-colors duration-300 sm:px-0 lg:px-4" style={{ background: isDark ? '#0F172A' : '#F8FAFC' }}>
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex min-w-0 items-center gap-3">
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: isDark ? '#F8FAFC' : '#0F172A' }}>Produits</h1>

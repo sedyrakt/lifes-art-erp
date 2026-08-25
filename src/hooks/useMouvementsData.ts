@@ -1,3 +1,8 @@
+// ============================================================
+// src/hooks/useMouvementsData.ts
+// ⭐ FIX: Cache image mba tsy hisy boucle
+// ⭐ FIX: Hooks rehetra eo an-tampon'ny hook
+// ============================================================
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ArrowDownCircle, ArrowUpCircle, MinusCircle } from 'lucide-react';
 import { Mouvement, MouvementsStats } from '../types/mouvements';
@@ -6,8 +11,12 @@ const ITEMS_PER_PAGE = 8;
 const EMPTY_STATS: MouvementsStats = { total: 0, entrees: 0, sorties: 0, ajustements: 0, quantiteEntree: 0, quantiteSortie: 0 };
 
 export default function useMouvementsData() {
+  // ✅ FIX: HOOKS REHETRA ETO AMBONY (TSY MISY CONDITION)
   const isMounted = useRef(true);
   const fetchLock = useRef(false);
+  const imagesLoaded = useRef<Set<number>>(new Set()); // ✅ FIX: Cache image
+  const cursorHistory = useRef<(number | null)[]>([null]);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [mouvements, setMouvements] = useState<Mouvement[]>([]);
@@ -23,7 +32,6 @@ export default function useMouvementsData() {
   const [imageUrls, setImageUrls] = useState<Record<number, string | null>>({});
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const cursorHistory = useRef<(number | null)[]>([null]);
 
   const VALID_TYPES = ['ENTREE', 'SORTIE', 'AJUSTEMENT'];
 
@@ -39,16 +47,28 @@ export default function useMouvementsData() {
 
   const loadImageForMouvement = useCallback(async (mouvement: Mouvement) => {
     if (!mouvement?.produit_image || !window.api?.images?.getUrl) return;
+    
+    // ✅ FIX: Raha efa voaloady dia tsy mamerina
+    if (imagesLoaded.current.has(mouvement.id)) return;
+    
     try {
       const result = await window.api.images.getUrl(mouvement.produit_image);
       let url = result?.success ? result.data : null;
       if (url) url = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
       if (!isMounted.current) return;
-      if (url) setImageUrls(prev => ({ ...prev, [mouvement.id]: url }));
-      else setImageErrors(prev => ({ ...prev, [mouvement.id]: true }));
+      if (url) {
+        setImageUrls(prev => ({ ...prev, [mouvement.id]: url }));
+        imagesLoaded.current.add(mouvement.id); // ✅ FIX
+      } else {
+        setImageErrors(prev => ({ ...prev, [mouvement.id]: true }));
+        imagesLoaded.current.add(mouvement.id); // ✅ FIX
+      }
     } catch (err) { 
       console.error('[useMouvementsData] Image error:', err); 
-      if (isMounted.current) setImageErrors(prev => ({ ...prev, [mouvement.id]: true })); 
+      if (isMounted.current) {
+        setImageErrors(prev => ({ ...prev, [mouvement.id]: true }));
+        imagesLoaded.current.add(mouvement.id); // ✅ FIX
+      }
     }
   }, []);
 
@@ -62,6 +82,7 @@ export default function useMouvementsData() {
         setMouvements([]); 
         setHasMore(true); 
         cursorHistory.current = [null]; 
+        imagesLoaded.current.clear(); // ✅ FIX: Clear cache rehefa refresh
       }
       let targetLastId: number | null = null;
       if (direction === 'next') targetLastId = lastId;
@@ -129,6 +150,7 @@ export default function useMouvementsData() {
         quantiteSortie: Number(result.stats?.quantiteSortie || 0) 
       });
       setImageErrors({});
+      imagesLoaded.current.clear(); // ✅ FIX: Clear cache rehefa page vaovao
       for (const mouvement of data) void loadImageForMouvement(mouvement);
     } catch (err: any) {
       console.error('[useMouvementsData] ERREUR', err?.message);

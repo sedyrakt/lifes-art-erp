@@ -1,21 +1,15 @@
 // ============================================================
-// electron/utils/logger.cjs - VERSION SYNCHRONOUS ULTRA FLUIDE
-// ⭐ MIARAKA AMIN'NY FANITSARA REHETRA
-// ⭐ FANATSARANA: Tsy mampiasa async/await intsony
-// ⭐ FANATSARANA: logSecurityEvent dia mampiasa runQuery (sync)
-// ⭐ FANATSARANA: Queue ho an'ny performance, flush sync
-// ⭐ FANITSARA VAOVAO: Nampiana normalizeParam ho an'ny params
-// ⭐ FANITSARA VAOVAO: Fanamarinana table security_logs
+// electron/utils/logger.cjs - VERSION SIMPLIFIÉE
+// ⭐ Tsy miankina amin'ny queries.cjs na utils.cjs intsony
+// ⭐ Mampiasa getDb() mivantana
 // ============================================================
 
 const fs = require('fs');
 const path = require('path');
-const { runQuery } = require('../database/queries.cjs');
-const { normalizeParam } = require('../database/utils.cjs');
 const { getDb } = require('../database/connection.cjs');
 
 // ============================================================
-// CONSTANTES (Production Safe - Hardcoded)
+// CONSTANTES
 // ============================================================
 const LOG_LEVEL = 'info';
 const LOG_FILE = './logs/app.log';
@@ -25,8 +19,12 @@ const LOG_QUEUE_SIZE = 100;
 // ============================================================
 // CREER DOSSIER LOGS
 // ============================================================
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(LOG_DIR)) {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.warn('⚠️ Impossible de créer le dossier logs:', err.message);
 }
 
 // ============================================================
@@ -42,7 +40,7 @@ const LEVELS = {
 const CURRENT_LEVEL = LEVELS[LOG_LEVEL] || LEVELS.info;
 
 // ============================================================
-// ⭐ LOG QUEUE (ho an'ny performance)
+// LOG QUEUE
 // ============================================================
 let logQueue = [];
 let isWriting = false;
@@ -101,42 +99,50 @@ const log = (level, message, data = null) => {
 };
 
 // ============================================================
-// ⭐ SECURITY LOG - SYNCHRONOUS (INSERT DATABASE)
+// ⭐ SECURITY LOG - SYNCHRONOUS (sans dépendances externes)
 // ============================================================
 const logSecurityEvent = (email, action, ip, userAgent, status = 1, details = '') => {
   try {
+    // ⭐ Normaliser les paramètres
     const safeIp = typeof ip === 'string' ? ip : (ip?.toString?.() || '127.0.0.1');
     const safeUserAgent = typeof userAgent === 'string' ? userAgent : (userAgent?.toString?.() || 'Electron');
     const safeEmail = typeof email === 'string' ? email : 'anonymous';
     const safeDetails = typeof details === 'string' ? details : JSON.stringify(details || '');
+    const safeStatus = Number(status) || 0;
 
-    // ⭐ FANITSARA VAOVAO: Hamarino raha misy ny table security_logs
+    // ⭐ Vérifier la connexion DB
     const db = getDb();
-    const checkStmt = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'security_logs'");
-    const tableExists = checkStmt.get();
-    if (!tableExists) {
-      console.warn('⚠️ Table security_logs nExiste pas, log ignoré');
+    if (!db || !db.open) {
+      console.warn('⚠️ [logger] Database non disponible, log ignoré');
       return;
     }
 
-    // ⭐ FANITSARA VAOVAO: Mampiasa normalizeParam ho an'ny params
-    runQuery(
-      `INSERT INTO security_logs (email, action, ip, userAgent, status, details, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
-      [
-        normalizeParam(safeEmail, 0),
-        normalizeParam(action, 1),
-        normalizeParam(safeIp, 2),
-        normalizeParam(safeUserAgent, 3),
-        normalizeParam(status, 4),
-        normalizeParam(safeDetails, 5)
-      ]
-    );
+    // ⭐ Vérifier si la table existe
+    try {
+      const tableExists = db.prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name = 'security_logs'"
+      ).get();
+      
+      if (!tableExists) {
+        console.warn('⚠️ [logger] Table security_logs inexistante, log ignoré');
+        return;
+      }
+
+      // ⭐ Insérer le log
+      db.prepare(`
+        INSERT INTO security_logs (email, action, ip, userAgent, status, details, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+      `).run(safeEmail, action, safeIp, safeUserAgent, safeStatus, safeDetails);
+
+    } catch (dbErr) {
+      console.warn('⚠️ [logger] Erreur DB:', dbErr.message);
+      return;
+    }
 
     // Log dans le fichier aussi
-    log('info', `[SECURITY] ${action} - ${safeEmail} - ${safeDetails}`, { ip: safeIp, status });
+    log('info', `[SECURITY] ${action} - ${safeEmail}`, { ip: safeIp, status: safeStatus });
   } catch (err) {
-    console.warn('⚠️ Erreur logSecurityEvent:', err.message);
+    console.warn('⚠️ [logger] Erreur logSecurityEvent:', err.message);
     log('error', `[SECURITY] Erreur log: ${err.message}`, { email, action });
   }
 };

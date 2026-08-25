@@ -1,3 +1,4 @@
+// src/hooks/useEmployesData.ts
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { UserCheck, UserX, Clock, User } from 'lucide-react';
 import { Employe, Paiement, EmployesStats } from '../types/employes';

@@ -1,3 +1,4 @@
+// src/hooks/useProduitsData.ts
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 const ITEMS_PER_PAGE = 8;
@@ -14,52 +15,73 @@ const SORT_MAP = {
 type SortOption = keyof typeof SORT_MAP;
 
 interface ProduitFilters {
-  searchTerm: string; filterCategorie: string; filterStatus: string;
-  prixMin: string; prixMax: string; dateFrom: string; dateTo: string;
+  searchTerm: string;
+  filterCategorie: string;
+  filterStatus: string;
+  prixMin: string;
+  prixMax: string;
+  dateFrom: string;
+  dateTo: string;
 }
-interface CategoryItem { id: number; nom: string; }
-interface FournisseurItem { id: number; nom: string; }
+
 interface ApiResponse { success?: boolean; data?: any; pagination?: any; error?: string; }
 
 export const useProduitsData = () => {
+  // ✅ FIX: HOOKS REHETRA ETO AMBONY (TSY MISY CONDITION)
+  const isMounted = useRef(true);
+  const fetchLock = useRef(false);
+  const firstLoadDone = useRef(false);
+  const referencesLoaded = useRef(false);
+  const loadDataRef = useRef<() => Promise<void>>(async () => {});
+  const loadedImageIds = useRef<Set<number>>(new Set());
+  const imageLoadingIds = useRef<Set<number>>(new Set());
+
   const [produits, setProduits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  
+  // ⭐ FIX: Ny filters dia manana valeur par défaut
   const [filters, setFilters] = useState<ProduitFilters>({
-    searchTerm: '', filterCategorie: '', filterStatus: '',
-    prixMin: '', prixMax: '', dateFrom: '', dateTo: '',
+    searchTerm: '',
+    filterCategorie: '',
+    filterStatus: '',
+    prixMin: '',
+    prixMax: '',
+    dateFrom: '',
+    dateTo: '',
   });
+
   const [sortOption, setSortOption] = useState<SortOption>('Nom (A-Z)');
   const [imageUrls, setImageUrls] = useState<Record<number, string | null>>({});
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
-  const loadedImageIds = useRef<Set<number>>(new Set());
-  const imageLoadingIds = useRef<Set<number>>(new Set());
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [fournisseurs, setFournisseurs] = useState<FournisseurItem[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [fournisseurs, setFournisseurs] = useState<any[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const isMounted = useRef(true);
-  const fetchLock = useRef(false);
-  const firstLoadDone = useRef(false);
-  const referencesLoaded = useRef(false);
-  const loadDataRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     isMounted.current = true;
-    return () => { isMounted.current = false; fetchLock.current = false; };
+    return () => {
+      isMounted.current = false;
+      fetchLock.current = false;
+    };
   }, []);
 
+  // ⭐ FIX: Miaro amin'ny undefined
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (isMounted.current) setDebouncedSearch(filters.searchTerm.trim());
+      if (isMounted.current) {
+        const searchTerm = filters?.searchTerm || ''; // ⭐ FIX
+        setDebouncedSearch(searchTerm.trim());
+      }
     }, 300);
     return () => clearTimeout(timer);
-  }, [filters.searchTerm]);
+  }, [filters?.searchTerm]);
 
   // Normalisation
-  const normalizeCategory = useCallback((item: any): CategoryItem | null => {
+  const normalizeCategory = useCallback((item: any): { id: number; nom: string } | null => {
     if (!item) return null;
     const id = Number(item.id);
     if (!Number.isInteger(id) || id <= 0) return null;
@@ -67,7 +89,7 @@ export const useProduitsData = () => {
     return { id, nom };
   }, []);
 
-  const normalizeFournisseur = useCallback((item: any): FournisseurItem | null => {
+  const normalizeFournisseur = useCallback((item: any): { id: number; nom: string } | null => {
     if (!item) return null;
     const id = Number(item.id);
     if (!Number.isInteger(id) || id <= 0) return null;
@@ -90,23 +112,17 @@ export const useProduitsData = () => {
   const loadReferences = useCallback(async (force = false) => {
     if (referencesLoaded.current && !force) return;
     try {
-      console.log('🔄 [Produits] Chargement catégories/fournisseurs...');
-
       // Catégories
       if (window.api?.categories?.getAll) {
         try {
           const result = await window.api.categories.getAll({ page: 1, limit: 10000 });
-          console.log('📂 [Produits] categories:getAll =>', result);
           if (result?.success) {
             const rawData = extractArray(result, 'categories');
-            const normalized = rawData.map(normalizeCategory).filter((item): item is CategoryItem => item !== null);
+            const normalized = rawData.map(normalizeCategory).filter((item): item is { id: number; nom: string } => item !== null);
             const unique = normalized.filter((item, idx, arr) => arr.findIndex(x => x.id === item.id) === idx);
             unique.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
             if (isMounted.current) setCategories(unique);
-            console.log(`📂 [Produits] ${unique.length} catégorie(s) chargée(s)`);
-            if (unique.length === 0) console.warn('⚠️ [Produits] categories:getAll retourne 0 catégorie.');
           } else {
-            console.error('❌ [Produits] categories:getAll failed:', result?.error);
             if (isMounted.current) setCategories([]);
           }
         } catch (err) {
@@ -114,7 +130,6 @@ export const useProduitsData = () => {
           if (isMounted.current) setCategories([]);
         }
       } else {
-        console.error('❌ [Produits] window.api.categories.getAll indisponible');
         if (isMounted.current) setCategories([]);
       }
 
@@ -122,16 +137,13 @@ export const useProduitsData = () => {
       if (window.api?.fournisseurs?.getAll) {
         try {
           const result = await window.api.fournisseurs.getAll({ page: 1, limit: 10000 });
-          console.log('🏢 [Produits] fournisseurs:getAll =>', result);
           if (result?.success) {
             const rawData = extractArray(result, 'fournisseurs');
-            const normalized = rawData.map(normalizeFournisseur).filter((item): item is FournisseurItem => item !== null);
+            const normalized = rawData.map(normalizeFournisseur).filter((item): item is { id: number; nom: string } => item !== null);
             const unique = normalized.filter((item, idx, arr) => arr.findIndex(x => x.id === item.id) === idx);
             unique.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
             if (isMounted.current) setFournisseurs(unique);
-            console.log(`🏢 [Produits] ${unique.length} fournisseur(s) chargé(s)`);
           } else {
-            console.error('❌ [Produits] fournisseurs:getAll failed:', result?.error);
             if (isMounted.current) setFournisseurs([]);
           }
         } catch (err) {
@@ -139,16 +151,14 @@ export const useProduitsData = () => {
           if (isMounted.current) setFournisseurs([]);
         }
       } else {
-        console.error('❌ [Produits] window.api.fournisseurs.getAll indisponible');
         if (isMounted.current) setFournisseurs([]);
       }
 
       referencesLoaded.current = true;
-      console.log('✅ [Produits] Références chargées:', { categories: categories.length, fournisseurs: fournisseurs.length });
     } catch (error) {
       console.error('❌ [Produits] ERREUR loadReferences:', error);
     }
-  }, [extractArray, normalizeCategory, normalizeFournisseur, categories.length, fournisseurs.length]);
+  }, [extractArray, normalizeCategory, normalizeFournisseur]);
 
   // Chargement initial des références
   useEffect(() => {
@@ -174,13 +184,17 @@ export const useProduitsData = () => {
 
       const sort = SORT_MAP[sortOption] || SORT_MAP['Nom (A-Z)'];
       const params = {
-        page: currentPage, limit: ITEMS_PER_PAGE,
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
         search: debouncedSearch || undefined,
-        sortBy: sort.field, sortOrder: sort.direction,
-        status: filters.filterStatus !== '' ? filters.filterStatus : undefined,
-        categorieId: filters.filterCategorie || undefined,
-        prixMin: filters.prixMin || undefined, prixMax: filters.prixMax || undefined,
-        dateFrom: filters.dateFrom || undefined, dateTo: filters.dateTo || undefined,
+        sortBy: sort.field,
+        sortOrder: sort.direction,
+        status: filters?.filterStatus || undefined,
+        categorieId: filters?.filterCategorie || undefined,
+        prixMin: filters?.prixMin || undefined,
+        prixMax: filters?.prixMax || undefined,
+        dateFrom: filters?.dateFrom || undefined,
+        dateTo: filters?.dateTo || undefined,
       };
 
       const result = await window.api.products.getAll(params);
@@ -204,7 +218,7 @@ export const useProduitsData = () => {
       if (isMounted.current) { setLoading(false); setRefreshing(false); }
       fetchLock.current = false;
     }
-  }, [currentPage, debouncedSearch, sortOption, filters.filterStatus, filters.filterCategorie, filters.prixMin, filters.prixMax, filters.dateFrom, filters.dateTo, loadReferences]);
+  }, [currentPage, debouncedSearch, sortOption, filters?.filterStatus, filters?.filterCategorie, filters?.prixMin, filters?.prixMax, filters?.dateFrom, filters?.dateTo, loadReferences]);
 
   useEffect(() => { loadDataRef.current = loadProduits; }, [loadProduits]);
 
@@ -212,7 +226,7 @@ export const useProduitsData = () => {
     if (!isMounted.current) return;
     setCurrentPage(1);
     loadDataRef.current(true);
-  }, [debouncedSearch, sortOption, filters.filterStatus, filters.filterCategorie, filters.prixMin, filters.prixMax, filters.dateFrom, filters.dateTo]);
+  }, [debouncedSearch, sortOption, filters?.filterStatus, filters?.filterCategorie, filters?.prixMin, filters?.prixMax, filters?.dateFrom, filters?.dateTo]);
 
   useEffect(() => {
     if (isMounted.current && firstLoadDone.current) loadDataRef.current(false);
@@ -329,7 +343,7 @@ export const useProduitsData = () => {
     return result;
   }, []);
 
-  // Images
+  // Images upload/delete
   const uploadImage = useCallback(async (base64: string) => {
     if (!window.api?.images?.upload) throw new Error('API images.upload indisponible');
     if (!base64) throw new Error('Image invalide');
@@ -355,15 +369,37 @@ export const useProduitsData = () => {
   }, []);
 
   return {
-    produits, loading, refreshing, setRefreshing,
-    currentPage, setCurrentPage, totalItems, totalPages, ITEMS_PER_PAGE,
-    filters, setFilters, sortOption, setSortOption,
-    categories, fournisseurs, loadReferences,
-    refresh, loadData,
-    imageUrls, imageErrors, loadImageUrl, handleImageError,
-    getStats, generateCode,
-    createProduit, updateProduit, deleteProduit, bulkDelete, bulkUpdateStatus,
-    uploadImage, deleteImage, getProduitById,
+    produits,
+    loading,
+    refreshing,
+    setRefreshing,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    totalPages,
+    ITEMS_PER_PAGE,
+    filters,
+    setFilters,
+    sortOption,
+    setSortOption,
+    categories,
+    fournisseurs,
+    loadReferences,
+    refresh,
+    loadData,
+    imageUrls,
+    imageErrors,
+    loadImageUrl,
+    handleImageError,
+    getStats,
+    generateCode,
+    createProduit,
+    updateProduit,
+    deleteProduit,
+    bulkDelete,
+    bulkUpdateStatus,
+    uploadImage,
+    deleteImage,
+    getProduitById,
   };
 };
-

@@ -2,14 +2,14 @@
 
 const { getDb } = require('../../database/connection.cjs');
 
-// ⭐ FIX: Mampiasa DEBUG mba tsy hivoaka ny log rehefa production
 const DEBUG = process.env.NODE_ENV === 'development';
 
-const log = (...args) => {
-  if (DEBUG) console.log('[📦 Products]', ...args);
-};
+const log = (...args) => { if (DEBUG) console.log('[📦 Products]', ...args); };
 const error = (...args) => console.error('[❌ Products]', ...args);
 
+let stmtPrepared = false;
+
+// ⭐ FIX: Refa ny variables statements
 let stmtGetById = null;
 let stmtGetByCode = null;
 let stmtCreate = null;
@@ -24,10 +24,6 @@ let stmtSearchFTS = null;
 let stmtSearchLike = null;
 let stmtGetStats = null;
 let stmtCheckUsage = null;
-let stmtPrepared = false;
-
-const DEFAULT_PAGE_SIZE = 50;
-const MAX_PAGE_SIZE = 100;
 
 const PRODUCT_COLUMNS = `
   p.id, p.code, p.nom, p.description, p.categorie_id, p.fournisseur_id,
@@ -49,7 +45,7 @@ function prepareStatements() {
       WHERE p.id = ?
       LIMIT 1
     `);
-    stmtGetByCode = db.prepare(`SELECT ${PRODUCT_COLUMNS} FROM produits p WHERE p.code = ? LIMIT 1`);
+    stmtGetByCode = db.prepare(`SELECT ${PRODUCT_COLUMNS}, c.nom AS categorie_nom FROM produits p LEFT JOIN categories c ON c.id = p.categorie_id WHERE p.code = ? LIMIT 1`);
     stmtCreate = db.prepare(`
       INSERT INTO produits (code, nom, description, categorie_id, fournisseur_id,
         prix_achat, prix_vente, quantite_stock, quantite_minimale,
@@ -79,18 +75,21 @@ function prepareStatements() {
       ORDER BY p.quantite_stock DESC, p.id ASC LIMIT ?
     `);
     stmtGetByCategorie = db.prepare(`
-      SELECT ${PRODUCT_COLUMNS} FROM produits p
+      SELECT ${PRODUCT_COLUMNS}, c.nom AS categorie_nom FROM produits p
+      LEFT JOIN categories c ON c.id = p.categorie_id
       WHERE p.categorie_id = ? AND p.status = 'actif'
       ORDER BY p.nom COLLATE NOCASE ASC, p.id ASC LIMIT ?
     `);
     stmtSearchFTS = db.prepare(`
-      SELECT ${PRODUCT_COLUMNS} FROM produits_fts f
+      SELECT ${PRODUCT_COLUMNS}, c.nom AS categorie_nom FROM produits_fts f
       INNER JOIN produits p ON p.id = f.rowid
+      LEFT JOIN categories c ON c.id = p.categorie_id
       WHERE produits_fts MATCH ? AND p.status != 'archive'
       ORDER BY p.nom COLLATE NOCASE ASC, p.id ASC LIMIT ?
     `);
     stmtSearchLike = db.prepare(`
-      SELECT ${PRODUCT_COLUMNS} FROM produits p
+      SELECT ${PRODUCT_COLUMNS}, c.nom AS categorie_nom FROM produits p
+      LEFT JOIN categories c ON c.id = p.categorie_id
       WHERE p.nom LIKE ? OR p.code LIKE ?
       ORDER BY p.nom COLLATE NOCASE ASC, p.id ASC LIMIT ?
     `);
@@ -134,6 +133,4 @@ module.exports = {
   get stmtSearchLike() { return stmtSearchLike; },
   get stmtGetStats() { return stmtGetStats; },
   get stmtCheckUsage() { return stmtCheckUsage; },
-  DEFAULT_PAGE_SIZE,
-  MAX_PAGE_SIZE,
 };

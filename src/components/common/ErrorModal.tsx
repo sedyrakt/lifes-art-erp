@@ -1,3 +1,4 @@
+// src/components/common/ErrorModal.tsx
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { XCircle, X, AlertTriangle } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -63,6 +64,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
 
   if (!isMounted) return null;
 
+  // ⭐ FIX: Mode Light - Mazava (White / Slate-50)
   const colors = isDark
     ? {
         overlay: 'rgba(2, 6, 23, 0.72)', card: '#0F172A', border: '#1E293B', divider: '#1E293B',
@@ -74,7 +76,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
         progressBg: '#1E293B', progress: '#EF4444',
       }
     : {
-        overlay: 'rgba(15, 23, 42, 0.38)', card: '#FFFFFF', border: '#E2E8F0', divider: '#F1F5F9',
+        overlay: 'rgba(15, 23, 42, 0.25)', card: '#FFFFFF', border: '#E2E8F0', divider: '#F1F5F9',
         text: '#0F172A', muted: '#475569', subtle: '#64748B',
         iconBg: '#FEF2F2', icon: '#DC2626',
         detailsBg: '#F8FAFC', detailsBorder: '#E2E8F0',
@@ -88,7 +90,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
       style={{ backgroundColor: colors.overlay, backdropFilter: 'blur(3px)' }}
       onMouseDown={(event) => { if (event.target === event.currentTarget) handleClose(); }}>
       <div role="alertdialog" aria-modal="true" aria-labelledby="error-modal-title" aria-describedby="error-modal-description"
-        className={`relative w-full max-w-[460px] overflow-hidden rounded-2xl border shadow-[0_20px_50px_rgba(15,23,42,0.18)] transition-all duration-180 ease-out ${isOpen ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-1 scale-[0.985] opacity-0'}`}
+        className={`relative w-full max-w-[460px] overflow-hidden rounded-2xl border shadow-[0_20px_50px_rgba(15,23,42,0.12)] transition-all duration-180 ease-out ${isOpen ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-1 scale-[0.985] opacity-0'}`}
         style={{ backgroundColor: colors.card, borderColor: colors.border }}
         onMouseDown={(event) => event.stopPropagation()}>
         <div className="flex items-center justify-between gap-4 border-b px-5 py-4" style={{ borderColor: colors.divider }}>

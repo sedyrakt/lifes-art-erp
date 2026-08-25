@@ -1,11 +1,6 @@
 // ============================================================
 // src/pages/Paiements.tsx
-// ============================================================
-// ⭐ PREMIUM PAIEMENTS PAGE
-// ⭐ DARK + LIGHT MODE
-// ⭐ READABLE TYPOGRAPHY (identique aux tables)
-// ⭐ ALL BORDER SYSTEM
-// ⭐ RESPONSIVE LAYOUT
+// ⭐ FIX: Mampiseho mivantana ny PaiementsModalForm
 // ============================================================
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -30,18 +25,10 @@ interface StatusModalState { isOpen: boolean; title: string; message: string; }
 const Paiements: React.FC = () => {
   const { isDark } = useTheme();
 
-  // ==========================================================
-  // COLORS (identique à CategoriesTable)
-  // ==========================================================
-
   const tableBackground = isDark ? 'bg-[#111c30]' : 'bg-white';
   const tableSecondaryBackground = isDark ? 'bg-[#0f192b]' : 'bg-slate-50/70';
   const borderColor = isDark ? 'border-white/[0.14]' : 'border-slate-200';
   const pageBackground = isDark ? 'bg-[#0A1222]' : 'bg-[#F8FAFC]';
-
-  // ==========================================================
-  // STATE
-  // ==========================================================
 
   const [activeTab, setActiveTab] = useState<TabId>('employes');
   const [paiements, setPaiements] = useState<any[]>([]);
@@ -80,14 +67,15 @@ const Paiements: React.FC = () => {
   const [globalStats, setGlobalStats] = useState({ total_paiements: 0, total_montant: 0, employes: 0 });
 
   const tabs = [
-    { id: 'employes' as TabId, label: 'Détails employés', icon: <Users size={15} />, activeClass: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400', activeBar: 'bg-indigo-500' },
-    { id: 'commande' as TabId, label: 'Commandes', icon: <ShoppingCart size={15} />, activeClass: 'bg-violet-500/10 text-violet-600 dark:text-violet-400', activeBar: 'bg-violet-500' },
-    { id: 'facture' as TabId, label: 'Factures', icon: <FileText size={15} />, activeClass: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400', activeBar: 'bg-cyan-500' },
+    { id: 'employes' as TabId, label: 'Détails employés', activeClass: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400', activeBar: 'bg-indigo-500' },
+    { id: 'commande' as TabId, label: 'Commandes', activeClass: 'bg-violet-500/10 text-violet-600 dark:text-violet-400', activeBar: 'bg-violet-500' },
+    { id: 'facture' as TabId, label: 'Factures', activeClass: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400', activeBar: 'bg-cyan-500' },
   ];
 
-  // ==========================================================
-  // DATA LOADERS
-  // ==========================================================
+  // ⭐ FIX: Console.log mba hahitana ny showModal
+  useEffect(() => {
+    console.log('🟢 showModal:', showModal);
+  }, [showModal]);
 
   const fetchEmployeTotals = useCallback(async (employesList: any[]) => {
     if (!employesList.length) return;
@@ -173,10 +161,6 @@ const Paiements: React.FC = () => {
   useEffect(() => { isMounted.current = true; loadData(true); return () => { isMounted.current = false; }; }, [loadData]);
   useEffect(() => { if (!isMounted.current) return; loadPaiements(false); loadGlobalStats(); }, [currentPage, searchHistorique, filterEmploye, filterMois, filterAnnee, sortOption, loadPaiements, loadGlobalStats]);
 
-  // ==========================================================
-  // HANDLERS
-  // ==========================================================
-
   const handleConfirmBulkDelete = useCallback(async () => {
     if (deleteTarget.length === 0) return;
     try {
@@ -239,10 +223,6 @@ const Paiements: React.FC = () => {
     }
   }, [loadData, refreshPaiementCounts, fetchEmployeTotals, employes]);
 
-  // ==========================================================
-  // RENDER
-  // ==========================================================
-
   return (
     <>
       <SuccessModal isOpen={successModal.isOpen} onClose={() => setSuccessModal({ isOpen: false, title: '', message: '' })} title={successModal.title} message={successModal.message} buttonText="OK" autoCloseDelay={3000} />
@@ -259,7 +239,6 @@ const Paiements: React.FC = () => {
               const active = activeTab === tab.id;
               return (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex items-center gap-2 rounded-t-xl px-4 py-2.5 text-[13px] font-semibold transition ${active ? tab.activeClass : isDark ? 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'}`}>
-                  <span className={active ? 'text-indigo-500' : ''}>{tab.icon}</span>
                   {tab.label}
                   {active && <span className={`absolute bottom-[-1px] left-3 right-3 h-0.5 rounded-full ${tab.activeBar}`} />}
                 </button>
@@ -329,9 +308,21 @@ const Paiements: React.FC = () => {
         {showHistorique && historiqueEmploye && (
           <PaiementsHistoriqueModal isOpen={showHistorique} onClose={() => setShowHistorique(false)} onAddPaiement={() => { setShowHistorique(false); setShowModal(true); }} historiqueData={historiqueData} moisLabels={moisLabels} />
         )}
+
+        {/* ⭐ FIX: Mampiseho mivantana ny PaiementsModalForm */}
         {showModal && (
-          <PaiementsModalForm isOpen={showModal} onClose={() => { setShowModal(false); setEditingPaiement(null); }} onSubmit={handleSubmit} editingPaiement={editingPaiement} employes={employes} moisOptions={moisLabels.map((l, i) => ({ value: i + 1, label: l }))} annees={annees} isDark={isDark} />
+          <PaiementsModalForm
+            isOpen={showModal}
+            onClose={() => { setShowModal(false); setEditingPaiement(null); }}
+            onSubmit={handleSubmit}
+            editingPaiement={editingPaiement}
+            employes={employes}
+            moisOptions={moisLabels.map((l, i) => ({ value: i + 1, label: l }))}
+            annees={annees}
+            isDark={isDark}
+          />
         )}
+
         <ConfirmModal isOpen={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeleteTarget([]); }} onConfirm={handleConfirmBulkDelete} title="Suppression en lot" message={`Voulez-vous vraiment supprimer ${deleteTarget.length} élément(s) ?`} confirmText="Supprimer" cancelText="Annuler" confirmColor="red" isDark={isDark} />
       </div>
     </>

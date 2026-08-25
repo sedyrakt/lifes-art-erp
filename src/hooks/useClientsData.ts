@@ -24,6 +24,15 @@ export interface ClientFilters {
 interface ClientStats { total: number; particuliers: number; entreprises: number; avec_telephone: number; }
 
 export const useClientsData = () => {
+  // ✅ FIX: HOOKS REHETRA ETO AMBONY (TSY MISY CONDITION)
+  const isMounted = useRef(true);
+  const fetchLock = useRef(false);
+  const firstLoadDone = useRef(false);
+  const loadDataRef = useRef<() => Promise<void>>(async () => {});
+  const loadedImageIds = useRef<Set<number>>(new Set());
+  const imageLoadingIds = useRef<Set<number>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [clients, setClients] = useState<ClientData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -38,12 +47,6 @@ export const useClientsData = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imagePath, setImagePath] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const isMounted = useRef(true);
-  const fetchLock = useRef(false);
-  const firstLoadDone = useRef(false);
-  const loadDataRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; fetchLock.current = false; }; }, []);
   useEffect(() => { const t = setTimeout(() => setDebouncedSearch(filters.searchTerm.trim()), 300); return () => clearTimeout(t); }, [filters.searchTerm]);
@@ -86,21 +89,24 @@ export const useClientsData = () => {
 
   // ⭐ FIX: Maka ny sary amin'ny alalan'ny images.getUrl (tahaka ny produits)
   const loadImageUrl = useCallback(async (client: ClientData) => {
-    if (!client?.image || imageUrls[client.id]) return null;
-    const path = String(client.image).trim();
-    if (!path) return null;
+    if (!client?.image || loadedImageIds.current.has(client.id) || imageLoadingIds.current.has(client.id)) return null;
+    imageLoadingIds.current.add(client.id);
     try {
       if (window.api?.images?.getUrl) {
-        const result = await window.api.images.getUrl(path);
+        const result = await window.api.images.getUrl(client.image);
         const url = result?.success ? result.data : null;
-        if (url) { setImageUrls(prev => ({ ...prev, [client.id]: url })); return url; }
+        if (url) {
+          setImageUrls(prev => ({ ...prev, [client.id]: url }));
+          loadedImageIds.current.add(client.id);
+          return url;
+        }
       }
-      if (path.startsWith('data:') || path.startsWith('http')) { setImageUrls(prev => ({ ...prev, [client.id]: path })); return path; }
-      return path;
+      return null;
     } catch (err) { console.error('❌ loadImageUrl:', err); setImageErrors(prev => ({ ...prev, [client.id]: true })); return null; }
-  }, [imageUrls]);
+    finally { imageLoadingIds.current.delete(client.id); }
+  }, []);
 
-  useEffect(() => { let cancelled = false; (async () => { if (!Array.isArray(clients) || clients.length === 0) return; for (const c of clients) { if (cancelled || !c?.image || imageUrls[c.id]) continue; await loadImageUrl(c); } })(); return () => { cancelled = true; }; }, [clients, imageUrls, loadImageUrl]);
+  useEffect(() => { let cancelled = false; (async () => { if (!Array.isArray(clients) || clients.length === 0) return; for (const c of clients) { if (cancelled || !c?.image) continue; await loadImageUrl(c); } })(); return () => { cancelled = true; }; }, [clients, loadImageUrl]);
 
   const handleImageError = useCallback((id: number) => { setImageErrors(prev => ({ ...prev, [id]: true })); setImageUrls(prev => { const n = { ...prev }; delete n[id]; return n; }); }, []);
   

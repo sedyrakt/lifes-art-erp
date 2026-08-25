@@ -1,3 +1,4 @@
+// src/pages/MouvementsStock.tsx
 import React, { useCallback, useState, useMemo } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import useMouvementsData from '../hooks/useMouvementsData';

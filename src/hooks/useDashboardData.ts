@@ -1,8 +1,7 @@
 // ============================================================
 // src/hooks/useDashboardData.ts - 20M READY (PROGRESSIVE LOADING)
-// ⭐ CORRIGÉ: Nampidirina ny data rehetra ho an'ny DashboardCharts
-// ⭐ FIX: Interface misy charts rehetra, loadData mangataka avokoa
-// ⭐ FIX: Nampitomboina ny `limit` ho 20 (avy amin'ny 5) mba hahafahan'ilay "Autres" miseho tsara ao amin'ny Donut
+// ⭐ FIX: Mampiasa products.getStats() fa tsy stock.getStats()
+// ⭐ FIX: FOMBA 2 - Date de début = Daty création client
 // ============================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -12,7 +11,6 @@ export interface DashboardChartsData {
   topProduits: any[];
   categorieRepartition: any[];
   stockStatus: { en_stock: number; stock_bas: number; rupture: number };
-  // ⭐ VAOVAO
   entreesStock: any[];
   sortiesStock: any[];
   topClients: any[];
@@ -21,9 +19,15 @@ export interface DashboardChartsData {
 }
 
 export const useDashboardData = () => {
+  const isMounted = useRef(true);
+  const fetchLock = useRef(false);
+  const firstLoadDone = useRef(false);
+  const loadDataRef = useRef<(isRefresh?: boolean) => Promise<void>>(async () => {});
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // ⭐ FIX: Nampiana ny firstClientDate
   const [stats, setStats] = useState<any>({
     totalProduits: 0,
     stockTotal: 0,
@@ -32,12 +36,17 @@ export const useDashboardData = () => {
     commandesTotal: 0,
     commandesEnAttente: 0,
     totalClients: 0,
+    clientsActifs: 0,
     chiffreAffaires: 0,
+    depenses: 0,
+    salaires: 0,
+    salairesPayes: 0,
     beneficeNet: 0,
+    stockValue: 0,
     totalPaiements: 0,
+    firstClientDate: null, // ⭐ VAOVAO
   });
 
-  // ⭐ VAOVAO: Charts data misy ny rehetra
   const [chartsData, setChartsData] = useState<DashboardChartsData>({
     ventesParMois: [],
     topProduits: [],
@@ -49,11 +58,6 @@ export const useDashboardData = () => {
     depensesParCategorie: [],
     commandesStatut: [],
   });
-
-  const isMounted = useRef(true);
-  const fetchLock = useRef(false);
-  const firstLoadDone = useRef(false);
-  const loadDataRef = useRef<(isRefresh?: boolean) => Promise<void>>(async () => {});
 
   useEffect(() => {
     isMounted.current = true;
@@ -67,6 +71,11 @@ export const useDashboardData = () => {
     return r.status === 'fulfilled' && r.value?.success ? r.value.data : fallback;
   };
 
+  const toNumber = (value: any): number => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  };
+
   const loadData = useCallback(async (isRefresh = false) => {
     if (fetchLock.current) return;
     fetchLock.current = true;
@@ -75,17 +84,54 @@ export const useDashboardData = () => {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const statsRes = await window.api.dashboard.getStats();
-      if (statsRes?.success && isMounted.current) {
-        setStats(statsRes.data);
+      // ⭐ FIX: Mangataka ny daty création client (Fomba 2)
+      const [statsRes, productsStatsRes, firstDateRes] = await Promise.allSettled([
+        window.api.dashboard.getStats(),
+        window.api.products.getStats(),
+        window.api.dashboard.getChartData({ type: 'premiere-date' }),
+      ]);
+
+      if (isMounted.current) {
+        const d = statsRes.status === 'fulfilled' && statsRes.value?.success ? statsRes.value.data || {} : {};
+        const productsStats = productsStatsRes.status === 'fulfilled' && productsStatsRes.value?.success ? productsStatsRes.value.data || {} : {};
+        
+        // ⭐ FIX: Daty création client
+        const firstClientDate = firstDateRes.status === 'fulfilled' && firstDateRes.value?.success 
+          ? firstDateRes.value.data 
+          : null;
+
+        let salairesPayes = 0;
+        try {
+          const result = await window.api.payments.getStats();
+          if (result?.success) {
+            salairesPayes = toNumber(result.data?.total_montant);
+          }
+        } catch (err) {
+          console.error('❌ Erreur payments.getStats:', err);
+        }
+
+        const chiffreAffaires = toNumber(d.chiffreAffaires);
+        const depenses = toNumber(d.depenses);
+        const beneficeNet = Math.max(0, chiffreAffaires - depenses - salairesPayes);
+        const stockValue = toNumber(productsStats.valeur_totale);
+        const clientsActifs = toNumber(d.totalClients);
+
+        setStats({
+          ...d,
+          chiffreAffaires,
+          depenses,
+          salairesPayes,
+          beneficeNet,
+          stockValue,
+          clientsActifs,
+          firstClientDate, // ⭐ VAOVAO
+        });
       }
 
       const year = new Date().getFullYear();
 
-      // ⭐ VAOVAO: Mangataka ny data rehetra ilain'ny DashboardCharts
-      // ⭐ FIX MAJEUR: Nampitomboina ny limit ho 20 mba hahafahan'ilay Donut mamorona ny "Autres" tsara
       const [topRes, catRes, ventesRes, stockRes, entreesRes, sortiesRes, clientsRes, depensesRes, commandesRes] = await Promise.allSettled([
-        window.api.dashboard.getChartData({ type: 'top-produits', limit: 20 }), // ⭐ 20 no alefa mba hahazoana vokatra mihoatra ny 5
+        window.api.dashboard.getChartData({ type: 'top-produits', limit: 20 }),
         window.api.dashboard.getChartData({ type: 'repartition-categories' }),
         window.api.dashboard.getChartData({ type: 'ventes-par-mois', year }),
         window.api.dashboard.getChartData({ type: 'stock-status' }),
@@ -179,4 +225,3 @@ export const useDashboardData = () => {
     loadData,
   };
 };
-

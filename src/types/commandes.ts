@@ -1,4 +1,7 @@
+// ============================================================
 // src/types/commandes.ts
+// ⭐ TYPES REHETRA HO AN'NY COMMANDES
+// ============================================================
 
 export const STATUS = {
   PENDING: 'En attente',

@@ -1,18 +1,21 @@
-// electron/preload.cjs
+// ============================================================
+// electron/preload.cjs - VOAAMBOARINA (VERSION FINALE)
+// ⭐ FIX: Modules ERP ilaina fotsiny (Achats + Ventes + updateStatus)
+// ⭐ FIX: NAMPIANA NY API LICENSE (activateWithCode, verifyCode, sns.)
+// ⭐ FIX: NAMPIANA NY stock.getStats()
+// ============================================================
 const { contextBridge, ipcRenderer } = require('electron');
 
 console.log('🔌 PRELOAD SCRIPT - CHARGEMENT...');
 if (!ipcRenderer) throw new Error('Electron IPC unavailable');
 ipcRenderer.setMaxListeners(50);
 
-// ⭐ FANITSARA: Hardcoded ny DEBUG mba tsy hiankina amin'ny process.env
 const DEBUG = false;
 
 function log(...args) { if (DEBUG) console.log(...args); }
 log('🔌 Plateforme:', process.platform);
 
-// ⭐ FANITSARA: Hardcoded ny APP_VERSION mba tsy hiankina amin'ny process.env
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '1.0.0';
 
 function invoke(channel, ...args) {
   try { return ipcRenderer.invoke(channel, ...args); } 
@@ -128,6 +131,10 @@ const api = {
     getEntrees: (options) => invoke('stock:get-entrees', options),
     getSorties: (options) => invoke('stock:get-sorties', options),
     getMouvements: (options) => invoke('stock:get-mouvements', options),
+    
+    // ⭐ FIX: NAMPIANA IZAO (getStats)
+    getStats: () => invoke('stock:get-stats'),
+    
     getEntreesByProduit: (produitId, options) => invoke('stock:get-entrees-by-produit', produitId, options),
     getSortiesByProduit: (produitId, options) => invoke('stock:get-sorties-by-produit', produitId, options),
     getMouvementsByProduit: (produitId, options) => invoke('stock:get-mouvements-by-produit', produitId, options),
@@ -153,6 +160,7 @@ const api = {
     bulkDelete: (ids) => invoke('employes:bulk-delete', ids),
     onChanged: (callback) => on('employes:changed', callback),
     getPaiementCountsBatch: (ids) => invoke('employes:get-paiement-counts-batch', ids),
+    getTotalSalairesPayes: (annee) => invoke('employes:get-total-salaires-payes', annee),
   },
   expenses: {
     getAll: (options) => invoke('expenses:get-all', options),
@@ -281,7 +289,6 @@ const api = {
   utils: {
     exportData: (data, format) => invoke('utils:export-data', data, format),
     print: () => invoke('utils:print'),
-    // ⭐ AJOUT CRUCIAL: saveFile (Enregistrer sous) - Tena zava-dehibe io!
     saveFile: (data, defaultPath) => invoke('utils:save-file', data, defaultPath),
   },
   platform: {
@@ -292,6 +299,87 @@ const api = {
     app: "Life's Art",
     version: APP_VERSION,
   },
+};
+
+// ============================================================
+// ⭐ MODULES ERP: ACHATS (ilaina fotsiny)
+// ============================================================
+
+api.achats = {
+  getAll: (options = {}) => invoke('achats:get-all', options),
+  getById: (id) => invoke('achats:get-by-id', id),
+  getDetails: (achatId) => invoke('achats:get-details', achatId),
+  create: (data) => invoke('achats:create', data),
+  update: (id, data) => invoke('achats:update', id, data),
+  updateStatus: (id, statut) => invoke('achats:update-status', id, statut),
+  delete: (id) => invoke('achats:delete', id),
+  bulkDelete: (ids) => invoke('achats:bulk-delete', ids),
+  onChanged: (callback) => on('achats:changed', callback),
+};
+
+// ============================================================
+// ⭐ MODULES ERP: VENTES (Devis & Factures) - NAMPIANA
+// ============================================================
+
+api.ventes = {
+  getDevis: (options) => invoke('ventes:get-devis', options),
+  getDevisById: (id) => invoke('ventes:get-devis-by-id', id),
+  createDevis: (data) => invoke('ventes:create-devis', data),
+  updateDevis: (id, data) => invoke('ventes:update-devis', id, data),
+  deleteDevis: (id) => invoke('ventes:delete-devis', id),
+  getDevisDetails: (devisId) => invoke('ventes:get-devis-details', devisId),
+  getFactures: (options) => invoke('ventes:get-factures', options),
+  getFactureById: (id) => invoke('ventes:get-facture-by-id', id),
+  createFacture: (data) => invoke('ventes:create-facture', data),
+  updateFacture: (id, data) => invoke('ventes:update-facture', id, data),
+  deleteFacture: (id) => invoke('ventes:delete-facture', id),
+  getFactureDetails: (factureId) => invoke('ventes:get-facture-details', factureId),
+  convertDevisToFacture: (devisId) => invoke('ventes:convert-devis-to-facture', devisId),
+  onChanged: (callback) => on('ventes:changed', callback),
+};
+
+// ============================================================
+// ⭐ API LICENSE (NAMPIANA IZAO)
+// ============================================================
+
+api.license = {
+  load: () => invoke('license:load'),
+  save: (data) => invoke('license:save', data),
+  reset: () => invoke('license:reset'),
+  checkStatus: () => invoke('license:check-status'),
+  getPath: () => invoke('license:get-path'),
+  getStatusCode: () => invoke('license:get-status-code'),
+  validate: (context) => invoke('license:validate', context),
+  getMachineId: () => invoke('license:get-machine-id'),
+  verify: (licenseKey, signature, payload) => invoke('license:verify', licenseKey, signature, payload),
+  activate: (licenseKey, signature, payload) => invoke('license:activate', licenseKey, signature, payload),
+  verifyChecksum: (licenseKey) => invoke('license:verify-checksum', licenseKey),
+  getPackages: () => invoke('license:get-packages'),
+  securityCheck: () => invoke('license:security-check'),
+  getIntegrityHashes: () => invoke('license:get-integrity-hashes'),
+  getCurrent: () => invoke('license:get-current'),
+  deactivate: () => invoke('license:deactivate'),
+  listDatabase: () => invoke('license:list-database'),
+  clearCache: () => invoke('license:clear-cache'),
+  refreshTimer: () => invoke('license:refresh-timer'),
+  getExpiration: () => invoke('license:get-expiration'),
+  // ⭐ NOUVEAU: Activation par code
+  activateWithCode: (code) => invoke('license:activate-with-code', code),
+  generateCode: (packageType) => invoke('license:generate-code', packageType),
+  verifyCode: (code) => invoke('license:verify-code', code),
+  // ⭐ Events
+  onChanged: (callback) => on('license:changed', callback),
+};
+
+// ============================================================
+// ⭐ API REVOCATION (NAMPIANA)
+// ============================================================
+
+api.revocation = {
+  check: (licenseKey, activationId) => invoke('license:revocation:check', licenseKey, activationId),
+  stats: () => invoke('license:revocation:stats'),
+  revoke: (licenseKey, reason) => invoke('license:revocation:revoke', licenseKey, reason),
+  unrevoke: (licenseKey) => invoke('license:revocation:unrevoke', licenseKey),
 };
 
 try {

@@ -4,43 +4,12 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Activity, ArrowDown, ArrowUp, Eye, Trash2, Package, CalendarDays, Hash, ChevronRight } from 'lucide-react';
 import { formatMoney } from '../../lib/formatMoney';
 
-interface Mouvement {
-  id: number;
-  produit_nom: string;
-  produit_code: string;
-  type_mouvement: string;
-  quantite: number;
-  ancien_stock: number;
-  nouveau_stock: number;
-  date_mouvement: string;
-  reference: string;
-  prix_achat?: number;
-  prix_unitaire?: number;
-  produit_image?: string;
-}
+interface Mouvement { id: number; produit_nom: string; produit_code: string; type_mouvement: string; quantite: number; ancien_stock: number; nouveau_stock: number; date_mouvement: string; reference: string; prix_achat?: number; prix_unitaire?: number; produit_image?: string; }
+interface MouvementsGridProps { mouvements: Mouvement[]; getTypeColor: (type: string) => string; getTypeIcon: (type: string) => React.ReactNode; getTypeLabel: (type: string) => string; onView?: (mouvement: Mouvement) => void; onDelete?: (id: number) => void; onBulkDelete?: (ids: number[]) => void; imageUrls?: Record<number, string | null>; loadImageForMouvement?: (mouvement: Mouvement) => void; isDark?: boolean; }
 
-interface MouvementsGridProps {
-  mouvements: Mouvement[];
-  getTypeColor: (type: string) => string;
-  getTypeIcon: (type: string) => React.ReactNode;
-  getTypeLabel: (type: string) => string;
-  onView?: (mouvement: Mouvement) => void;
-  onDelete?: (id: number) => void;
-  onBulkDelete?: (ids: number[]) => void;
-  imageUrls?: Record<number, string | null>;
-  loadImageForMouvement?: (mouvement: Mouvement) => void;
-  isDark?: boolean;
-}
-
-const parseDate = (value?: string): Date | null => {
-  if (!value) return null; const parsed = new Date(value); if (Number.isNaN(parsed.getTime())) return null; return parsed;
-};
-const formatDate = (value?: string): string => {
-  const date = parseDate(value); if (!date) return '-'; return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-};
-const formatTime = (value?: string): string => {
-  const date = parseDate(value); if (!date) return ''; return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-};
+const parseDate = (value?: string): Date | null => { if (!value) return null; const parsed = new Date(value); if (Number.isNaN(parsed.getTime())) return null; return parsed; };
+const formatDate = (value?: string): string => { const date = parseDate(value); if (!date) return '-'; return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }); };
+const formatTime = (value?: string): string => { const date = parseDate(value); if (!date) return ''; return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); };
 const formatNumber = (value: number): string => Number(value || 0).toLocaleString('fr-FR');
 const normalizeMovementType = (type?: string): string => (type || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
 
@@ -64,7 +33,6 @@ const MouvementsGrid: React.FC<MouvementsGridProps> = ({ mouvements, getTypeColo
     {mouvements.filter(Boolean).map((mouvement) => {
       const type = normalizeMovementType(mouvement.type_mouvement);
       const isEntree = type.includes('ENTREE'); const isSortie = type.includes('SORTIE');
-      // ⭐ FIX: Maka ny sary amin'ny imageUrls
       const imageUrl = imageUrls[mouvement.id] ?? mouvement.produit_image ?? null;
       const quantite = Number(mouvement.quantite) || 0;
       const price = Number(mouvement.prix_unitaire ?? mouvement.prix_achat ?? 0) || 0;
@@ -78,23 +46,14 @@ const MouvementsGrid: React.FC<MouvementsGridProps> = ({ mouvements, getTypeColo
       else { quantityConfig = { prefix: '±', wrapper: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400', icon: <Activity size={12} /> }; }
 
       return (<div key={mouvement.id} className={`group relative flex flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md ${isDark ? 'border-white/[0.10] bg-[#111c30] hover:border-white/[0.20]' : 'border-slate-200 bg-white hover:border-indigo-200'}`}>
-        
-        {/* PHOTO (COMPACT: H-36) */}
+        {/* PHOTO */}
         <div className="relative h-36 w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800">
           {imageUrl ? (<img src={imageUrl} alt={productName} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />) : (<div className="flex h-full w-full items-center justify-center bg-indigo-50 dark:bg-indigo-500/10"><div className="flex flex-col items-center gap-1"><Package size={28} className="text-indigo-400 dark:text-indigo-300" /><span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{productName.charAt(0).toUpperCase()}</span></div></div>)}
-          
-          {/* CALQUE (OVERLAY) */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-          {/* BADGE TYPE (COMPACT + BLUR) */}
-          <div className="absolute right-2 top-2 z-10">
-            <span className={`inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[12px] font-semibold text-white shadow-sm backdrop-blur-md`}>
-              {getTypeIcon(mouvement.type_mouvement)}{getTypeLabel(mouvement.type_mouvement)}
-            </span>
-          </div>
+          <div className="absolute right-2 top-2 z-10"><span className={`inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[12px] font-semibold text-white shadow-sm backdrop-blur-md`}>{getTypeIcon(mouvement.type_mouvement)}{getTypeLabel(mouvement.type_mouvement)}</span></div>
         </div>
 
-        {/* BODY (COMPACT P-3) */}
+        {/* BODY */}
         <div className="flex flex-1 flex-col p-3">
           <div className="mb-1 flex items-start justify-between">
             <h4 className="text-[14px] font-semibold text-slate-900 line-clamp-1 dark:text-slate-100" title={productName}>{productName}</h4>
@@ -128,7 +87,7 @@ const MouvementsGrid: React.FC<MouvementsGridProps> = ({ mouvements, getTypeColo
             </div>
           </div>
           
-          {/* ACTIONS COMPACT (H-8) */}
+          {/* ACTIONS */}
           <div className="mt-3 flex items-center gap-1.5 border-t border-slate-200 pt-2.5 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
             <button type="button" title="Voir les détails" onClick={() => onView?.(mouvement)} className="flex h-8 flex-1 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition hover:bg-indigo-100 hover:text-indigo-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"><Eye size={15} className="mx-auto" /></button>
             {(onDelete || onBulkDelete) && (<button type="button" title="Supprimer" onClick={() => { if (onDelete) onDelete(mouvement.id); else if (onBulkDelete) onBulkDelete([mouvement.id]); }} className="flex h-8 flex-1 items-center justify-center rounded-md bg-rose-100 text-rose-700 transition hover:bg-rose-200 hover:text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-800/50"><Trash2 size={15} className="mx-auto" /></button>)}

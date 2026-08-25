@@ -1,7 +1,6 @@
 // src/components/produits/ProduitsStats.tsx
 import React from 'react';
 import { Box, Package, AlertTriangle, TrendingUp } from 'lucide-react';
-import { formatMoney } from '../../lib/formatMoney';
 
 interface ProduitsStatsProps { 
   totalItems: number; 
@@ -21,9 +20,10 @@ const ProduitsStats: React.FC<ProduitsStatsProps> = ({
   alertes, 
   totalValeur = 0 
 }) => {
+  // ⭐ FIX: Format Ariary tsotra (tsy mampiasa formatMoney)
   const formattedValeur = typeof totalValeur === 'number' 
-    ? formatMoney(safeNumber(totalValeur)) 
-    : totalValeur || '0';
+    ? `${safeNumber(totalValeur).toLocaleString('fr-FR')} Ar` 
+    : totalValeur || '0 Ar';
   
   const stats = [
     { label: 'Valeur du stock', value: formattedValeur, icon: TrendingUp, iconClass: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400', accentClass: 'bg-indigo-500' },

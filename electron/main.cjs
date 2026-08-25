@@ -1,5 +1,8 @@
 // ============================================================
 // electron/main.cjs - LIFE'S ART ERP
+// ⭐ VERSION AMÉLIORÉE - FIX HANDLER REGISTRATION
+// ⭐ FIX: NAMPIANA NY LICENSE HANDLER
+// ⭐ FIX: Mampiasa dist-electron/ rehefa production
 // ============================================================
 'use strict';
 
@@ -7,27 +10,43 @@ const {app,BrowserWindow,ipcMain,session,shell,protocol,Menu,dialog}=require('el
 const path=require('path'),fs=require('fs');
 const dotenv = require('dotenv');
 
-// ⭐ FANITSARA: Mampiasa app.getAppPath() mba hahita tsara ny .env rehefa vita ny build
 dotenv.config({
   path: path.join(app.getAppPath(), '.env')
 });
+
+// ============================================================
+// ⭐ FIX: Mampiasa dist-electron/ rehefa production
+// ============================================================
+
+const isDev=!app.isPackaged||process.env.NODE_ENV==='development';
+const APP_ROOT=path.resolve(__dirname,'..');
+
+// ⭐ FIX: Raha production, ampiasao ny dist-electron/ fa tsy ny electron/
+const BASE_PATH = !isDev && fs.existsSync(path.join(__dirname, '..', 'dist-electron'))
+  ? path.join(__dirname, '..', 'dist-electron')
+  : path.resolve(__dirname, '.');
+
+const PRELOAD_PATH = path.join(BASE_PATH, 'preload.cjs');
+const DIST_PATH = path.join(APP_ROOT, 'dist');
+const DIST_INDEX = path.join(DIST_PATH, 'index.html');
+const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
 
 const {initDatabase,closeDatabase}=require('./database/init.cjs');
 const {getDb,getDbPath,getDatabaseDebugInfo}=require('./database/connection.cjs');
 const {log,warn,error}=require('./database/utils.cjs');
 
 let mainWindow=null,databaseInitialized=false,handlersRegistered=false,isQuitting=false,windowShown=false;
-const APP_ROOT=path.resolve(__dirname,'..'),PRELOAD_PATH=path.join(__dirname,'preload.cjs'),DIST_PATH=path.join(APP_ROOT,'dist'),DIST_INDEX=path.join(DIST_PATH,'index.html');
-const isDev=!app.isPackaged||process.env.NODE_ENV==='development',DEV_SERVER_URL=process.env.VITE_DEV_SERVER_URL||'http://localhost:5173';
 
 function mainLog(...args){console.log('[MAIN]',...args);}
 function mainWarn(...args){console.warn('[MAIN]',...args);}
 function mainError(...args){console.error('[MAIN]',...args);}
 
-// ⭐ FANITSARA: Fanamarinana ny .env sy ny JWT_SECRET
 mainLog('🔐 JWT_SECRET loaded:', Boolean(process.env.JWT_SECRET));
 mainLog('📦 APP PATH:', app.getAppPath());
 mainLog('📄 ENV PATH:', path.join(app.getAppPath(), '.env'));
+mainLog('📁 BASE_PATH:', BASE_PATH);
+mainLog('📁 PRELOAD_PATH:', PRELOAD_PATH);
+mainLog('📁 DIST_PATH:', DIST_PATH);
 
 function printDatabaseInfo(){
   try{
@@ -269,7 +288,8 @@ async function loadFrontend(){
 }
 
 // ============================================================
-// IPC HANDLER MODULE LOADER
+// IPC HANDLER MODULE LOADER - VOAAMBOARINA
+// ⭐ FIX: Mampiasa "handler" fa tsy "handlers" ihany
 // ============================================================
 
 function registerHandlerModule(label,modulePath){
@@ -284,31 +304,49 @@ function registerHandlerModule(label,modulePath){
 
     const handler=require(absolutePath);
     mainLog(`📦 IPC ${label} module chargé`);
+    mainLog(`📦 Exports:`, Object.keys(handler));
 
     let result=false;
 
-    if(typeof handler==='function')result=handler(ipcMain);
-    else if(handler&&typeof handler.register==='function')result=handler.register(ipcMain);
-    else if(handler&&typeof handler.registerHandlers==='function')result=handler.registerHandlers(ipcMain);
+    if(typeof handler==='function'){
+      mainLog(`🔧 Appel direct de la fonction...`);
+      result=handler(ipcMain);
+    }
+    else if(handler&&typeof handler.register==='function'){
+      mainLog(`🔧 Appel de register(ipcMain)...`);
+      result=handler.register(ipcMain);
+    }
+    else if(handler&&typeof handler.registerHandlers==='function'){
+      mainLog(`🔧 Appel de registerHandlers(ipcMain)...`);
+      result=handler.registerHandlers(ipcMain);
+    }
     else if(handler&&typeof handler==='object'){
       const keys=Object.keys(handler);
       mainLog(`📦 IPC ${label} exports:`,keys);
 
       for(const key of keys){
-        if(typeof handler[key]==='function'&&key.toLowerCase().includes('register')){
-          result=handler[key](ipcMain);
-          mainLog(`✅ IPC ${label} enregistré via: ${key}`);
-          break;
+        if(typeof handler[key]==='function' && (
+          key.toLowerCase().includes('register') || 
+          key.toLowerCase().includes('handler')
+        )){
+          mainLog(`🔧 Appel de ${key}(ipcMain)...`);
+          try {
+            result = handler[key](ipcMain);
+            mainLog(`✅ IPC ${label} enregistré via: ${key}, résultat: ${result}`);
+            if(result) break;
+          } catch (handlerErr) {
+            mainError(`❌ Erreur dans ${key}:`, handlerErr.message);
+          }
         }
       }
-    }else if(handler&&handler.default&&typeof handler.default==='function')result=handler.default(ipcMain);
-    else{
-      mainError(`❌ Module IPC ${label} chargé mais aucune fonction d'enregistrement trouvée`);
-      return false;
+    }
+    else if(handler&&handler.default&&typeof handler.default==='function'){
+      mainLog(`🔧 Appel de default(ipcMain)...`);
+      result=handler.default(ipcMain);
     }
 
     if(!result){
-      mainError(`❌ IPC ${label} function executed but returned false`);
+      mainError(`❌ IPC ${label} - Aucune fonction d'enregistrement trouvée ou retour false`);
       return false;
     }
 
@@ -322,7 +360,8 @@ function registerHandlerModule(label,modulePath){
 }
 
 // ============================================================
-// REGISTER ALL IPC
+// REGISTER ALL IPC - VOAAMBOARINA
+// ⭐ FIX: NAMPIANA NY LICENSE HANDLER
 // ============================================================
 
 function registerAllIPC(){
@@ -335,21 +374,49 @@ function registerAllIPC(){
   mainLog('🔌 ENREGISTREMENT IPC HANDLERS');
   mainLog('============================================================');
 
-  const handlerModules=[
-    ['AUTH','./ipc/auth.cjs'],['USERS','./ipc/users.cjs'],['PRODUCTS','./ipc/products.cjs'],
-    ['CATEGORIES','./ipc/categories.cjs'],['FOURNISSEURS','./ipc/fournisseurs.cjs'],['CLIENTS','./ipc/clients.cjs'],
-    ['ORDERS','./ipc/orders.cjs'],['STOCK','./ipc/stock.cjs'],['EMPLOYES','./ipc/employes.cjs'],
-    ['DEPENSES','./ipc/expenses.cjs'],['PAIEMENTS','./ipc/payments.cjs'],['DASHBOARD','./ipc/dashboard.cjs'],
-    ['REPORTS','./ipc/reports.cjs'],['IMAGES','./ipc/images.cjs'],['SETTINGS','./ipc/settings.cjs'],
-    ['BACKUP','./ipc/backup.cjs'],['DIALOG','./ipc/dialog.cjs']
-  ];
+const handlerModules = [
+  ['AUTH', './ipc/auth.cjs'],
+  ['USERS', './ipc/users.cjs'],
+  ['PRODUCTS', './ipc/products.cjs'],
+  ['CATEGORIES', './ipc/categories.cjs'],
+  ['FOURNISSEURS', './ipc/fournisseurs.cjs'],
+  ['CLIENTS', './ipc/clients.cjs'],
+  ['ORDERS', './ipc/orders.cjs'],
+  ['STOCK', './ipc/stock.cjs'],
+  ['ACHATS', './ipc/achats.cjs'],
+  ['EMPLOYES', './ipc/employes.cjs'],
+  ['DEPENSES', './ipc/expenses.cjs'],
+  ['PAIEMENTS', './ipc/payments.cjs'],
+  ['DASHBOARD', './ipc/dashboard.cjs'],
+  ['REPORTS', './ipc/reports.cjs'],
+  ['IMAGES', './ipc/images.cjs'],
+  ['SETTINGS', './ipc/settings.cjs'],
+  ['BACKUP', './ipc/backup.cjs'],
+  ['DIALOG', './ipc/dialog.cjs'],
+  ['LICENSE', './ipc/license.cjs'],
+  ['VENTES', './ipc/ventes.cjs'],
+  ['COMPTABILITE', './ipc/comptabilite.cjs']
+];
 
   let successCount=0;
+  const failedModules=[];
 
   for(const [label,modulePath] of handlerModules){
+    mainLog(`\n🔧 Enregistrement du module ${label}...`);
     const success=registerHandlerModule(label,modulePath);
-    if(success)successCount++;
-    if(label==='AUTH'&&!success)throw new Error('❌ AUTH IPC registration failed. auth:login cannot be used.');
+    
+    if(success){
+      successCount++;
+    } else {
+      failedModules.push(label);
+      if(label==='AUTH'){
+        mainError('❌ AUTH IPC registration failed - application mety tsy hiasa');
+      }
+    }
+  }
+
+  if(failedModules.length > 0){
+    mainWarn(`\n⚠️ ${failedModules.length} module(s) tsy voasoratra: ${failedModules.join(', ')}`);
   }
 
   try{
@@ -429,6 +496,9 @@ function registerAllIPC(){
 
   mainLog('============================================================');
   mainLog(`✅ IPC READY: ${successCount}/${handlerModules.length} modules`);
+  if(failedModules.length > 0){
+    mainWarn(`⚠️ Modules échoués: ${failedModules.join(', ')}`);
+  }
   mainLog('============================================================');
 
   return true;
@@ -500,6 +570,7 @@ app.whenReady().then(async()=>{
   mainLog('🛠️ Development:',isDev);
   mainLog('📁 userData:',app.getPath('userData'));
   mainLog('📁 __dirname:',__dirname);
+  mainLog('📁 BASE_PATH:',BASE_PATH);
   mainLog('📁 preload:',PRELOAD_PATH);
   mainLog('📁 dist:',DIST_PATH);
 
@@ -519,12 +590,12 @@ app.whenReady().then(async()=>{
 
   try{
     const ipcReady=registerAllIPC();
-    if(!ipcReady)throw new Error('IPC registration failed');
+    if(!ipcReady){
+      mainWarn('⚠️ IPC registration incomplete, mais on continue');
+    }
   }catch(ipcErr){
     mainError('❌ IPC INITIALIZATION FAILED:',ipcErr.message);
     if(ipcErr.stack)mainError(ipcErr.stack);
-    app.quit();
-    return;
   }
 
   createMainWindow();
@@ -618,6 +689,7 @@ process.on('unhandledRejection',reason=>{
 if(isDev){
   mainLog('🛠️ main.cjs chargé en mode development');
   mainLog('📁 APP_ROOT:',APP_ROOT);
+  mainLog('📁 BASE_PATH:',BASE_PATH);
   mainLog('📁 PRELOAD:',PRELOAD_PATH);
   mainLog('📁 DIST:',DIST_PATH);
 }

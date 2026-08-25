@@ -1,8 +1,8 @@
-// ============================================================
 // src/pages/Rapports.tsx - COMPACT VERSION
-// ============================================================
+// ⭐ FIX: ESRINA NY ICON REHETRA AFA-TSY NY BOUTON
+// ⭐ FIX: NAMPIANA NY FONTSIZE AO AMIN'NY TAB BAR
 import React, { useState, useEffect } from 'react';
-import { BarChart3, RefreshCw, TrendingUp, Package, Trophy, PieChart, Users, DollarSign, ShoppingCart } from 'lucide-react';
+import { BarChart3, RefreshCw } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatMoney } from '../lib/formatMoney';
 import { useRapportsData } from '../hooks/useRapportsData';
@@ -25,17 +25,18 @@ const Rapports: React.FC = () => {
     }
   }, [loading, refreshing, stats, ventesParMois, topProduits, commandesRecentes, refresh]);
 
+  // ⭐ FIX: ESORINA NY ICON AO AMIN'NY TABS
   const tabItems = [
-    { id: 'ventes' as const, label: 'Ventes', icon: TrendingUp },
-    { id: 'stock' as const, label: 'Mouvements stock', icon: Package },
-    { id: 'top' as const, label: 'Top produits', icon: Trophy },
-    { id: 'categories' as const, label: 'Catégories', icon: PieChart },
-    { id: 'clients' as const, label: 'Top clients', icon: Users },
-    { id: 'depenses' as const, label: 'Dépenses', icon: DollarSign },
-    { id: 'commandes' as const, label: 'Commandes', icon: ShoppingCart },
+    { id: 'ventes' as const, label: 'Ventes' },
+    { id: 'stock' as const, label: 'Mouvements stock' },
+    { id: 'top' as const, label: 'Top produits' },
+    { id: 'categories' as const, label: 'Catégories' },
+    { id: 'clients' as const, label: 'Top clients' },
+    { id: 'depenses' as const, label: 'Dépenses' },
+    { id: 'commandes' as const, label: 'Commandes' },
   ];
 
-  const bgColor = isDark ? '#0A1222' : '#F8FAFC';
+  const bgColor = isDark ? '#0F172A' : '#F8FAFC';
 
   return (
     <div className="min-h-screen font-sans transition-colors duration-300" style={{ background: bgColor }}>
@@ -68,12 +69,13 @@ const Rapports: React.FC = () => {
 
             <section><RapportsHeader selectedDate={selectedDate} granularity={granularity} onDateChange={setSelectedDate} onGranularityChange={setGranularity} onToday={() => setSelectedDate(new Date())} onRefresh={() => { if (!loading && !refreshing) refresh(); }} onExportStats={() => handleExportStats(formatMoney)} onExportPDF={() => handleExportPDF(formatMoney)} onExportCSV={() => handleExportCSV(formatMoney)} onExportTopProduits={() => handleExportTopProduits(formatMoney)} onExportCommandes={handleExportCommandes} isLoading={loading} isRefreshing={refreshing} /></section>
 
+            {/* ⭐ TAB BAR - NAMPIANA FONTSIZE */}
             <section className="rounded-xl border border-slate-200 bg-white p-1 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-slate-800 dark:bg-[#0F172A]">
               <div className="flex w-full items-center gap-1 overflow-x-auto scrollbar-hide">
                 {tabItems.map(tab => {
-                  const Icon = tab.icon, isActive = activeTab === tab.id;
-                  return (<button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`group relative flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-[14px] font-medium whitespace-nowrap transition-all duration-200 ${isActive ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-slate-200'}`}>
-                    <Icon className={`h-4 w-4 shrink-0 transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300'}`} strokeWidth={2} />
+                  const isActive = activeTab === tab.id;
+                  return (<button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`group relative flex h-10 shrink-0 items-center gap-2 rounded-lg px-4 text-[15px] font-medium whitespace-nowrap transition-all duration-200 ${isActive ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-slate-200'}`}>
+                    {/* ⭐ FIX: ESORINA NY ICON */}
                     <span>{tab.label}</span>
                     {isActive && <span className="absolute bottom-0 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full bg-indigo-600 dark:bg-indigo-400" />}
                   </button>);

@@ -1,4 +1,8 @@
 # ============================================================
+# ⭐ LIFE'S ART ERP - GITIGNORE (FENO A-Z)
+# ============================================================
+
+# ============================================================
 # ⭐ Environment variables
 # ============================================================
 .env
@@ -60,7 +64,6 @@ dist-final/
 # ⭐ Electron / Vite / OS specific
 # ============================================================
 electron-builder-debug.yml
-# Famafana ny local electron builder cache mba ho madio ny GitHub Actions
 ~/.electron
 ~/.cache/electron
 ~/.cache/electron-builder
@@ -80,3 +83,32 @@ Thumbs.db
 # ============================================================
 *.tsbuildinfo
 *.jsc
+
+# ============================================================
+# ⭐ FIAROVANA (SECURITY) - TOKONY TSY HIDITRA ANY AMIN'NY GITHUB
+# ============================================================
+
+# ⭐ Private Key (Fiarovana ny License)
+admin-tools/keys/private.pem
+admin-tools/keys/fingerprint.txt
+
+# ⭐ Code d'activation (Fiarovana ny License)
+admin-tools/exports/*
+!admin-tools/exports/.gitkeep
+
+# ⭐ License files
+license.lic
+*.lic
+
+# ⭐ Backup
+*.backup
+*.bak
+
+# ⭐ Fichier production
+*.jsc
+*.jsc.map
+
+# ⭐ Fiarovana ny Build Scripts (Obfuscation)
+build-obfuscated.cjs
+build-final-bytecode.cjs
+build-prod.cjs

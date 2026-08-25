@@ -1,13 +1,14 @@
 // ============================================================
 // electron/ipc/products.cjs - IPC HANDLERS PRODUITS
-// ⭐ FANITSARA VAOVAO: Production Safe (Hardcoded DEBUG)
-// ⭐ FIX: Mamerina `true` mba tsy hiteraka ilay "function returned false"
+// ⭐ FANITSARA VAOVAO: Mampiasa ny prepareStatements()
+// ⭐ FIX: Mamerina ny categorie_nom sy fournisseur_nom
 // ============================================================
 
 const { getDb } = require('../../database/connection.cjs');
 const { logAudit } = require('./audit.cjs');
 const { log, error } = require('./logger.cjs');
 const { buildProductsQuery, buildProductsCountQuery } = require('./queries.cjs');
+const { prepareStatements } = require('./statements.cjs'); // ⭐ FIX: Import prepareStatements
 
 // ⭐ FANITSARA: Hardcoded ny DEBUG mba tsy hiankina amin'ny process.env.NODE_ENV
 const DEBUG = false;
@@ -23,6 +24,12 @@ function emitProductsChanged(productData) { try { const { BrowserWindow } = requ
 function registerProductsHandlers(ipcMain) {
   if (DEBUG) log('🔥 REGISTER PRODUCTS HANDLERS');
   if (!ipcMain) throw new Error('ipcMain est null/undefined');
+
+  // ⭐ FIX: Prepare statements aloha
+  if (!prepareStatements()) {
+    error('❌ Impossible de préparer les statements produits');
+    return false;
+  }
 
   const channels = ['products:get-all','products:get-by-id','products:get-by-code','products:create','products:update','products:delete','products:get-alertes','products:get-top','products:get-by-categorie','products:search','products:update-stock','products:get-stats','products:bulk-update-status','products:bulk-delete'];
   for (const ch of channels) { try { ipcMain.removeHandler(ch); } catch (_) {} }
@@ -86,7 +93,17 @@ function registerProductsHandlers(ipcMain) {
     const sql = `SELECT p.id, p.nom, p.code, p.image, p.prix_vente, COALESCE(SUM(dc.quantite), 0) AS total_vendu, COALESCE(COUNT(DISTINCT dc.commande_id), 0) AS nb_commandes, COALESCE(SUM(dc.total), 0) AS total_ca FROM produits p LEFT JOIN details_commandes dc ON dc.produit_id = p.id LEFT JOIN commandes c ON c.id = dc.commande_id AND c.statut != 'Annulée' WHERE p.status = 'actif' GROUP BY p.id ORDER BY total_vendu DESC, total_ca DESC LIMIT ?`;
     return { success: true, data: db.prepare(sql).all(safeLimit) };
   }));
-  ipcMain.handle('products:search', withDbCheck((db, event, term, limit = 50) => { const cleanTerm = String(term || '').trim(); if (!cleanTerm) return { success: true, data: [], pagination: { count: 0 } }; const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100); const terms = cleanTerm.split(/\s+/).filter(Boolean).map(t => `"${t.replace(/"/g, '""')}"*`).join(' AND '); return { success: true, data: db.prepare(`SELECT p.* FROM produits_fts f INNER JOIN produits p ON p.id = f.rowid WHERE produits_fts MATCH ? AND p.status != 'archive' ORDER BY p.nom COLLATE NOCASE ASC, p.id ASC LIMIT ?`).all(terms, safeLimit), pagination: { count: safeLimit } }; }));
+  ipcMain.handle('products:search', withDbCheck((db, event, term, limit = 50) => { const cleanTerm = String(term || '').trim(); if (!cleanTerm) return { success: true, data: [], pagination: { count: 0 } }; const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100); const terms = cleanTerm.split(/\s+/).filter(Boolean).map(t => `"${t.replace(/"/g, '""')}"*`).join(' AND '); return { success: true, data: db.prepare(`SELECT p.*, c.nom AS categorie_nom FROM produits_fts f INNER JOIN produits p ON p.id = f.rowid LEFT JOIN categories c ON c.id = p.categorie_id WHERE produits_fts MATCH ? AND p.status != 'archive' ORDER BY p.nom COLLATE NOCASE ASC, p.id ASC LIMIT ?`).all(terms, safeLimit), pagination: { count: safeLimit } }; }));
+  
+  // ⭐ FIX: Nampiana ny products:get-by-categorie
+  ipcMain.handle('products:get-by-categorie', withDbCheck((db, event, categorieId, limit = 50) => {
+    const safeCategorieId = normalizeId(categorieId);
+    if (!safeCategorieId) return { success: false, error: 'ID catégorie invalide' };
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+    const data = db.prepare(`SELECT p.*, c.nom AS categorie_nom FROM produits p LEFT JOIN categories c ON c.id = p.categorie_id WHERE p.categorie_id = ? AND p.status = 'actif' ORDER BY p.nom COLLATE NOCASE ASC, p.id ASC LIMIT ?`).all(safeCategorieId, safeLimit);
+    return { success: true, data };
+  }));
+  
   ipcMain.handle('products:update-stock', withDbCheck((db, event, id, quantite, type, userId = null) => { const productId = normalizeId(id); if (!productId) return { success: false, error: 'ID invalide' }; const qty = Number(quantite); if (!Number.isFinite(qty) || qty <= 0) return { success: false, error: 'Quantité positive requise' }; if (type !== 'entree' && type !== 'sortie') return { success: false, error: 'Type invalide' }; const produit = db.prepare(`SELECT quantite_stock FROM produits WHERE id = ?`).get(productId); if (!produit) return { success: false, error: 'Produit non trouvé' }; const ancienStock = Number(produit.quantite_stock) || 0; let nouveauStock = ancienStock; if (type === 'entree') { nouveauStock += qty; } else { if (qty > ancienStock) return { success: false, error: `Stock insuffisant! Disponible: ${ancienStock}` }; nouveauStock -= qty; } db.prepare(`UPDATE produits SET quantite_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(nouveauStock, productId); return { success: true, data: { ancienStock, nouveauStock } }; }));
   ipcMain.handle('products:bulk-update-status', withDbCheck((db, event, ids, newStatus) => { if (!Array.isArray(ids) || ids.length === 0) return { success: false, error: 'Aucun produit sélectionné' }; if (newStatus !== 'actif' && newStatus !== 'inactif') return { success: false, error: 'Statut invalide' }; const validIds = [...new Set(ids.map(normalizeId).filter(Boolean))].slice(0, 500); if (!validIds.length) return { success: false, error: 'Liste d\'IDs invalide' }; const placeholders = validIds.map(() => '?').join(','); const stmt = db.prepare(`UPDATE produits SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`); const result = db.transaction(() => stmt.run(newStatus, ...validIds))(); return { success: true, changes: result.changes }; }));
   ipcMain.handle('products:bulk-delete', withDbCheck((db, event, ids) => { if (!Array.isArray(ids) || ids.length === 0) return { success: false, error: 'Aucun produit sélectionné' }; const validIds = [...new Set(ids.map(normalizeId).filter(Boolean))].slice(0, 500); if (!validIds.length) return { success: false, error: 'Liste d\'IDs invalide' }; const placeholders = validIds.map(() => '?').join(','); const stmt = db.prepare(`UPDATE produits SET status = 'inactif', updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`); const result = db.transaction(() => stmt.run(...validIds))(); return { success: true, changes: result.changes }; }));

@@ -1,3 +1,4 @@
+// src/pages/Employes.tsx
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Plus, Search, List, Grid, ArrowUpDown, X, Users, RefreshCw } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
@@ -144,7 +145,7 @@ const Employes: React.FC = () => {
   const borderColor = isDark ? 'rgba(255, 255, 255, 0.055)' : '#E2E8F0';
 
   return (
-    <div className="min-h-full w-full transition-colors duration-200" style={{ background: isDark ? '#0A1222' : '#F8FAFC' }}>
+    <div className="min-h-full w-full transition-colors duration-200" style={{ background: isDark ? '#0F172A' : '#F8FAFC' }}>
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-0 lg:px-4 py-6">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="min-w-0">
@@ -242,7 +243,6 @@ const Employes: React.FC = () => {
       {showHistoriqueModal && selectedEmploye && <EmployesHistoriqueModal isOpen={showHistoriqueModal} onClose={() => setShowHistoriqueModal(false)} employe={selectedEmploye} historiquePaiements={historiquePaiements} imageUrl={imageUrls[selectedEmploye.id] || null} anneeCalendrier={anneeCalendrier} selectedMoisDetail={selectedMoisDetail} selectedMoisDetailAnnee={selectedMoisDetailAnnee} onAnneeChange={setAnneeCalendrier} onMoisDetailSelect={(mois, annee) => { setSelectedMoisDetail(mois); setSelectedMoisDetailAnnee(annee); }} onPayer={() => { setShowHistoriqueModal(false); handlePaiement(selectedEmploye); }} onAnnulerPaiement={handleAnnulerPaiement} getMoisPourAnnee={getMoisPourAnnee} moisLabels={moisLabels} moisLabelsCourt={moisLabelsCourt} isDark={isDark} />}
       <ConfirmModal isOpen={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeleteTarget(null); }} onConfirm={handleConfirmDelete} title="Supprimer l’employé" message={`Êtes-vous sûr de vouloir supprimer définitivement "${deleteTarget?.nom || ''}" ?`} confirmText="Supprimer" cancelText="Annuler" confirmColor="red" isDark={isDark} />
       
-      {/* ⭐ FIX: Namboarina ho `green` ny couleur rehefa status update, mba tsy ho rouge intsony */}
       <ConfirmModal isOpen={showBulkConfirmModal} onClose={() => { setShowBulkConfirmModal(false); setBulkTargetIds([]); setBulkTargetStatus(''); }} onConfirm={handleConfirmBulkAction} title="Confirmation de l’opération" message={bulkActionType === 'delete' ? `Voulez-vous vraiment supprimer définitivement ${bulkTargetIds.length} employé(s) ?` : `Voulez-vous vraiment changer le statut de ${bulkTargetIds.length} employé(s) ?`} confirmText="Confirmer" cancelText="Annuler" confirmColor={bulkActionType === 'delete' ? 'red' : 'green'} isDark={isDark} />
       
       <SuccessModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} title={successTitle} message={successMessage} buttonText="OK" autoCloseDelay={3000} />

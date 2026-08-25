@@ -3,7 +3,7 @@
 // ============================================================
 // ⭐ PREMIUM PAIEMENTS STATS
 // ⭐ DARK + LIGHT MODE
-// ⭐ READABLE TYPOGRAPHY (identique aux tables)
+// ⭐ FONT SIZE MITOVY (18px valeur, 14px label)
 // ⭐ ALL BORDER SYSTEM
 // ⭐ RESPONSIVE GRID
 // ============================================================
@@ -11,7 +11,6 @@
 import React from 'react';
 import { DollarSign, Receipt, Users } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { formatMoney } from '../../lib/formatMoney';
 
 interface PaiementsStatsProps {
   totalPaiements: number;
@@ -28,10 +27,13 @@ const PaiementsStats: React.FC<PaiementsStatsProps> = ({ totalPaiements, nbPaiem
   const cardBackground = isDark ? 'bg-[#111c30]' : 'bg-white';
   const hoverBackground = isDark ? 'dark:hover:bg-slate-800/50' : 'hover:bg-slate-50';
 
+  // ⭐ FIX: Format Ariary tsotra (tsy mampiasa formatMoney)
+  const formattedTotal = `${Number(totalPaiements || 0).toLocaleString('fr-FR')} Ar`;
+
   const stats = [
     {
       label: 'Total payé',
-      value: formatMoney(Number(totalPaiements || 0)),
+      value: formattedTotal,
       subValue: `${Number(nbPaiements || 0).toLocaleString('fr-FR')} paiement${Number(nbPaiements || 0) > 1 ? 's' : ''}`,
       icon: DollarSign,
       iconClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400',
@@ -60,28 +62,28 @@ const PaiementsStats: React.FC<PaiementsStatsProps> = ({ totalPaiements, nbPaiem
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className={`group relative min-h-[70px] overflow-hidden rounded-xl border ${borderColor} ${cardBackground} ${hoverBackground} px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-[1px] ${hoverBorderColor} hover:shadow-md`}
+          className={`group relative min-h-[80px] overflow-hidden rounded-xl border ${borderColor} ${cardBackground} ${hoverBackground} px-4 py-3.5 shadow-sm transition-all duration-200 hover:-translate-y-[1px] ${hoverBorderColor} hover:shadow-md`}
         >
           <div
             className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full ${stat.accentClass} opacity-0 transition-opacity duration-200 group-hover:opacity-100`}
           />
           <div className="flex items-start gap-3">
             <div
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stat.iconClass} transition-transform duration-200 group-hover:scale-105`}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${stat.iconClass} transition-transform duration-200 group-hover:scale-105`}
             >
-              <stat.icon size={18} strokeWidth={1.8} />
+              <stat.icon size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-[15px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                <span className="truncate text-[18px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                   {stat.value}
                 </span>
               </div>
-              <div className="mt-0.5 truncate text-[12px] font-medium uppercase tracking-[0.04em] text-slate-500 dark:text-slate-400">
+              <div className="mt-0.5 truncate text-[14px] font-medium text-slate-600 dark:text-slate-400">
                 {stat.label}
               </div>
               {stat.subValue && (
-                <div className="mt-0.5 truncate text-[12px] font-medium text-slate-400 dark:text-slate-500">
+                <div className="mt-0.5 truncate text-[14px] font-medium text-slate-400 dark:text-slate-500">
                   {stat.subValue}
                 </div>
               )}

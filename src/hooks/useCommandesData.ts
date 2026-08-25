@@ -2,6 +2,7 @@
 // src/hooks/useCommandesData.ts - 20M READY (PAGE-BASED)
 // ⭐ FIX: LIMIT clients augmentée à 1000 pour afficher tout le carnet
 // ⭐ FIX: Nampidirina ny Déduplication ID mba tsy hisy doublon
+// ⭐ FIX: Cache image mba tsy hisy boucle
 // ============================================================
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Commande, Client, Produit, DetailCommande, STATUS } from '../types/commandes';
@@ -11,6 +12,14 @@ import { CompanyData } from '../components/company';
 const ITEMS_PER_PAGE = 8;
 
 export const useCommandesData = () => {
+  // ✅ FIX: HOOKS REHETRA ETO AMBONY (TSY MISY CONDITION)
+  const isMounted = useRef(true);
+  const fetchLock = useRef(false);
+  const firstLoadDone = useRef(false);
+  const loadDataRef = useRef<(isRefresh?: boolean) => Promise<void>>(async () => {});
+  const clientsLoaded = useRef(false);
+  const produitsLoaded = useRef(false);
+
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [produits, setProduits] = useState<Produit[]>([]);
@@ -32,12 +41,6 @@ export const useCommandesData = () => {
   const [selectedProduits, setSelectedProduits] = useState<{ id: number; quantite: number }[]>([]);
   const [stats, setStats] = useState({ total: 0, enAttente: 0, confirmees: 0, livrees: 0, annulees: 0, totalCA: 0, totalHT: 0, moyennePanier: 0, clientsUniques: 0 });
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const isMounted = useRef(true);
-  const fetchLock = useRef(false);
-  const firstLoadDone = useRef(false);
-  const loadDataRef = useRef<(isRefresh?: boolean) => Promise<void>>(async () => {});
-  const clientsLoaded = useRef(false);
-  const produitsLoaded = useRef(false);
 
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; fetchLock.current = false; }; }, []);
   useEffect(() => { const t = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 300); return () => clearTimeout(t); }, [searchTerm]);

@@ -2,10 +2,11 @@
 // src/components/profile/ProfileSidebar.tsx - SYNCED FONTS
 // ⭐ FIX: Font Size mifanaraka amin'ny Sidebar (15px/14px/13px)
 // ⭐ FIX: Nesoriko ny bouton 2FA sy ny props mifandraika
+// ⭐ FIX: ESRINA NY ICON REHETRA AFA-TSY NY BOUTON
 // ============================================================
 
 import React from 'react';
-import { User, Shield, Calendar, Building, KeyRound, LogOut, CheckCircle2, XCircle } from 'lucide-react';
+import { KeyRound, LogOut } from 'lucide-react';
 
 interface ProfileSidebarProps {
   role: string;
@@ -19,10 +20,11 @@ interface ProfileSidebarProps {
 const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   role, memberSince, companyName, twoFAEnabled, onPasswordChange, onLogout,
 }) => {
+  // ⭐ FIX: ESRINA NY ICON AO AMIN'NY INFO CARDS
   const infoCards = [
-    { icon: User, label: 'Rôle professionnel', value: role || 'Utilisateur' },
-    { icon: Calendar, label: 'Membre depuis', value: memberSince || '—' },
-    { icon: Building, label: 'Entreprise rattachée', value: companyName || "Life's Art ERP" },
+    { label: 'Rôle professionnel', value: role || 'Utilisateur' },
+    { label: 'Membre depuis', value: memberSince || '—' },
+    { label: 'Entreprise rattachée', value: companyName || "Life's Art ERP" },
   ];
 
   return (
@@ -30,7 +32,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       <div className="h-[2px] w-full bg-indigo-500" />
       <div className="p-5">
         <div className="flex items-center gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"><Shield size={18} strokeWidth={2} /></div>
+          {/* ⭐ FIX: ESRINA NY ICON */}
           <div className="min-w-0">
             <h3 className="truncate text-[15px] font-semibold text-slate-900 dark:text-slate-100">Informations & sécurité</h3>
             <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">Gestion de votre compte</p>
@@ -38,10 +40,8 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         </div>
         <div className="mt-4 space-y-2.5">
           {infoCards.map(item => { 
-            const Icon = item.icon; 
             return (
               <div key={item.label} className="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 transition-all duration-150 hover:border-indigo-200 hover:bg-indigo-50/30 dark:border-slate-800 dark:bg-slate-900/30 dark:hover:border-indigo-500/30 dark:hover:bg-indigo-500/5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition-colors group-hover:bg-indigo-50 group-hover:text-indigo-600 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-indigo-500/10 dark:group-hover:text-indigo-400"><Icon size={16} strokeWidth={2} /></div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{item.label}</p>
                   <p className="mt-0.5 truncate text-[14px] font-semibold text-slate-800 dark:text-slate-200" title={item.value}>{item.value}</p>
@@ -57,7 +57,8 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">Sécurité supplémentaire</p>
             </div>
             <div className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[13px] font-semibold ${twoFAEnabled ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
-              {twoFAEnabled ? <><CheckCircle2 size={11} />Activée</> : <><XCircle size={11} />Désactivée</>}
+              {/* ⭐ FIX: ESRINA NY ICON */}
+              {twoFAEnabled ? 'Activée' : 'Désactivée'}
             </div>
           </div>
           {/* ⭐ Nesoriko ny bouton 2FA eto */}

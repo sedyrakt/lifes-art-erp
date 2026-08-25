@@ -1,5 +1,5 @@
+// ============================================================
 // src/components/company/CompanySettingsModal/hooks/useCompanySettings.ts
-// ⭐ FANITSARA VAOVAO: Nesoriko ny success/error messages ao anatin'ny onGenerate
 // ⭐ FIX: Nampiana fanamarinana mba tsy hiverina erreur rehefa vita ny génération
 // ============================================================
 
@@ -26,7 +26,7 @@ const cleanText = (text: string): string => {
 export const useCompanySettings = (
   initialData?: CompanyData,
   onSave?: (data: CompanyData) => void,
-  onGenerate?: (data: CompanyData) => Promise<{ canceled?: boolean; success?: boolean; error?: string }>
+  onGenerate?: (data: CompanyData) => Promise<{ canceled?: boolean; success?: boolean; error?: string; filePath?: string }>
 ) => {
   const { company, updateCompany } = useCompany();
   
@@ -226,7 +226,6 @@ export const useCompanySettings = (
     }
   }, [formData, imageId, validate, onSave, updateCompany]);
 
-  // ⭐ VAOVAO: Nesoriko ny setSuccessMessage sy setErrorMessage. Ny Commandes no hikarakara ny Success/Error.
   // ⭐ FIX: Nampiana fanamarinana mba tsy hiverina erreur rehefa vita ny génération
   const handleGenerate = useCallback(async () => {
     console.log('🔄 useCompanySettings: handleGenerate appelé');
@@ -273,7 +272,7 @@ export const useCompanySettings = (
       // ⭐ FIX: Vérifier si la génération a réussi
       if (generateResult && generateResult.success) {
         console.log('✅ Génération réussie');
-        return { success: true };
+        return { success: true, filePath: generateResult.filePath };
       }
       
       // ⭐ FIX: Si generateResult est undefined mais onGenerate existe, considérer comme réussi

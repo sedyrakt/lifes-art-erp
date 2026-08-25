@@ -5,6 +5,7 @@
 
 const { log, error } = require('./logger.cjs');
 
+// ⭐ Fonction pour mettre à jour le statut du stock
 function updateProduitStatutStock(db, produitId) {
   try {
     if (!db) {
@@ -44,16 +45,6 @@ function updateProduitStatutStock(db, produitId) {
       statutStock = 'alerte';
     }
 
-    /*
-     * Tsy ovaina ho inactif eto intsony ny status.
-     *
-     * Antony:
-     * `status` = état métier du produit
-     * `statut_stock` = état du stock
-     *
-     * Tsy tokony hifangaro ireo.
-     */
-
     const stmt = db.prepare(`
       UPDATE produits
       SET
@@ -79,6 +70,108 @@ function updateProduitStatutStock(db, produitId) {
   }
 }
 
+// ⭐ Fonction pour créer une entrée de stock (Achats)
+function createEntree(db, data = {}) {
+  try {
+    if (!db) {
+      throw new Error('Database indisponible');
+    }
+
+    const produitId = Number(data.produit_id);
+    const quantite = Number(data.quantite);
+
+    if (!produitId || !quantite || quantite <= 0) {
+      return { success: false, error: 'Produit et quantité invalides' };
+    }
+
+    const produit = db.prepare('SELECT * FROM produits WHERE id = ?').get(produitId);
+    if (!produit) {
+      return { success: false, error: 'Produit non trouvé' };
+    }
+
+    const ancienStock = Number(produit.quantite_stock || 0);
+    const nouveauStock = ancienStock + quantite;
+
+    // Insérer l'entrée (mampiasa ny table entrees_stock efa misy)
+    db.prepare(`
+      INSERT INTO entrees_stock (produit_id, quantite, prix_unitaire, reference, fournisseur_id, observation, date_entree)
+      VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(produitId, quantite, data.prix_unitaire || 0, data.reference || '', data.fournisseur_id || null, data.observation || '');
+
+    // Mettre à jour le stock
+    db.prepare('UPDATE produits SET quantite_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(nouveauStock, produitId);
+
+    // Mettre à jour le statut
+    updateProduitStatutStock(db, produitId);
+
+    // Insérer le mouvement (mampiasa ny table mouvements_stock efa misy)
+    db.prepare(`
+      INSERT INTO mouvements_stock (produit_id, type_mouvement, quantite, ancien_stock, nouveau_stock, reference, observation, date_mouvement)
+      VALUES (?, 'ENTREE', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(produitId, quantite, ancienStock, nouveauStock, data.reference || '', data.observation || `Entrée de stock`);
+
+    log(`✅ [stock/logic] Entrée créée pour le produit ${produitId}: +${quantite}`);
+    return { success: true, data: { produitId, quantite, ancienStock, nouveauStock } };
+  } catch (err) {
+    error('❌ [stock/logic] createEntree:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+// ⭐ Fonction pour créer une sortie de stock (Ventes)
+function createSortie(db, data = {}) {
+  try {
+    if (!db) {
+      throw new Error('Database indisponible');
+    }
+
+    const produitId = Number(data.produit_id);
+    const quantite = Number(data.quantite);
+
+    if (!produitId || !quantite || quantite <= 0) {
+      return { success: false, error: 'Produit et quantité invalides' };
+    }
+
+    const produit = db.prepare('SELECT * FROM produits WHERE id = ?').get(produitId);
+    if (!produit) {
+      return { success: false, error: 'Produit non trouvé' };
+    }
+
+    const ancienStock = Number(produit.quantite_stock || 0);
+    if (quantite > ancienStock) {
+      return { success: false, error: `Stock insuffisant! Disponible: ${ancienStock}, demandé: ${quantite}` };
+    }
+
+    const nouveauStock = ancienStock - quantite;
+
+    // Insérer la sortie (mampiasa ny table sorties_stock efa misy)
+    db.prepare(`
+      INSERT INTO sorties_stock (produit_id, quantite, prix_unitaire, reference, destination, observation, date_sortie)
+      VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(produitId, quantite, data.prix_unitaire || 0, data.reference || '', data.destination || '', data.observation || '');
+
+    // Mettre à jour le stock
+    db.prepare('UPDATE produits SET quantite_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(nouveauStock, produitId);
+
+    // Mettre à jour le statut
+    updateProduitStatutStock(db, produitId);
+
+    // Insérer le mouvement (mampiasa ny table mouvements_stock efa misy)
+    db.prepare(`
+      INSERT INTO mouvements_stock (produit_id, type_mouvement, quantite, ancien_stock, nouveau_stock, reference, observation, date_mouvement)
+      VALUES (?, 'SORTIE', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(produitId, quantite, ancienStock, nouveauStock, data.reference || '', data.observation || `Sortie de stock`);
+
+    log(`✅ [stock/logic] Sortie créée pour le produit ${produitId}: -${quantite}`);
+    return { success: true, data: { produitId, quantite, ancienStock, nouveauStock } };
+  } catch (err) {
+    error('❌ [stock/logic] createSortie:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   updateProduitStatutStock,
+  createEntree,
+  createSortie,
 };

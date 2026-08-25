@@ -1,6 +1,7 @@
 // ============================================================
 // src/hooks/useSortiesData.ts - KEYSET PREV/NEXT (SANS APPEND)
-// ⭐ FIX: Maka ny sary amin'ny alalan'ny getById (tahaka ny modal)
+// ⭐ FIX: Cache image mba tsy hisy boucle
+// ⭐ FIX: Hooks rehetra eo an-tampon'ny hook
 // ============================================================
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { SortieStock } from '../types/sorties';
@@ -8,16 +9,26 @@ import { SortieStock } from '../types/sorties';
 const ITEMS_PER_PAGE = 8;
 
 export const useSortiesData = () => {
-  const isMounted = useRef(true); const fetchLock = useRef(false);
-  const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false);
-  const [totalItems, setTotalItems] = useState(0); const [totalPages, setTotalPages] = useState(1);
-  const [sorties, setSorties] = useState<SortieStock[]>([]); const [produits, setProduits] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState(''); const [filterProduit, setFilterProduit] = useState<string>('');
-  const [sortOption, setSortOption] = useState<string>('date-desc');
-  const [lastId, setLastId] = useState<number | null>(null); const [hasMore, setHasMore] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+  // ✅ FIX: HOOKS REHETRA ETO AMBONY (TSY MISY CONDITION)
+  const isMounted = useRef(true); 
+  const fetchLock = useRef(false);
+  const imagesLoaded = useRef<Set<number>>(new Set()); // ✅ FIX: Cache image
   const cursorHistory = useRef<(number | null)[]>([null]); 
-  const [imageUrls, setImageUrls] = useState<Record<number, string | null>>({}); const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+
+  const [loading, setLoading] = useState(true); 
+  const [refreshing, setRefreshing] = useState(false);
+  const [totalItems, setTotalItems] = useState(0); 
+  const [totalPages, setTotalPages] = useState(1);
+  const [sorties, setSorties] = useState<SortieStock[]>([]); 
+  const [produits, setProduits] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState(''); 
+  const [filterProduit, setFilterProduit] = useState<string>('');
+  const [sortOption, setSortOption] = useState<string>('date-desc');
+  const [lastId, setLastId] = useState<number | null>(null); 
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [imageUrls, setImageUrls] = useState<Record<number, string | null>>({}); 
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [debouncedSearch, setDebouncedSearch] = useState('');
   
@@ -26,26 +37,52 @@ export const useSortiesData = () => {
 
   const loadImageForSortie = useCallback(async (sortie: SortieStock) => {
     if (!sortie.produit_id || !window.api?.images?.getUrl) return;
+    
+    // ✅ FIX: Raha efa voaloady dia tsy mamerina
+    if (imagesLoaded.current.has(sortie.id)) return;
+    
     try {
       const productResult = await window.api.products.getById(sortie.produit_id);
       if (!productResult?.success || !productResult.data?.image) {
-        if (isMounted.current) setImageErrors(prev => ({ ...prev, [sortie.id]: true }));
+        if (isMounted.current) {
+          setImageErrors(prev => ({ ...prev, [sortie.id]: true }));
+          imagesLoaded.current.add(sortie.id); // ✅ FIX
+        }
         return;
       }
       const urlResult = await window.api.images.getUrl(productResult.data.image);
       let url = urlResult?.success ? urlResult.data : null;
       if (url) url = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
       if (isMounted.current) {
-        if (url) setImageUrls(prev => ({ ...prev, [sortie.id]: url }));
-        else setImageErrors(prev => ({ ...prev, [sortie.id]: true }));
+        if (url) {
+          setImageUrls(prev => ({ ...prev, [sortie.id]: url }));
+          imagesLoaded.current.add(sortie.id); // ✅ FIX
+        } else {
+          setImageErrors(prev => ({ ...prev, [sortie.id]: true }));
+          imagesLoaded.current.add(sortie.id); // ✅ FIX
+        }
       }
-    } catch (_) { if (isMounted.current) setImageErrors(prev => ({ ...prev, [sortie.id]: true })); }
+    } catch (_) { 
+      if (isMounted.current) {
+        setImageErrors(prev => ({ ...prev, [sortie.id]: true }));
+        imagesLoaded.current.add(sortie.id); // ✅ FIX
+      }
+    }
   }, []);
 
   const loadPage = useCallback(async (direction: 'next' | 'prev' | 'refresh') => {
     if (fetchLock.current) return; fetchLock.current = true;
     try {
-      if (direction === 'refresh') { setCurrentPage(1); cursorHistory.current = [null]; setLastId(null); setSorties([]); setHasMore(true); setTotalItems(0); setTotalPages(1); }
+      if (direction === 'refresh') { 
+        setCurrentPage(1); 
+        cursorHistory.current = [null]; 
+        setLastId(null); 
+        setSorties([]); 
+        setHasMore(true); 
+        setTotalItems(0); 
+        setTotalPages(1);
+        imagesLoaded.current.clear(); // ✅ FIX: Clear cache rehefa refresh
+      }
       let targetLastId: number | null = null;
       if (direction === 'next') targetLastId = lastId;
       else if (direction === 'prev') targetLastId = cursorHistory.current[currentPage - 2] || null;
@@ -74,7 +111,9 @@ export const useSortiesData = () => {
         if (direction === 'next') { if (lastId !== null) cursorHistory.current[currentPage] = lastId; setCurrentPage(prev => prev + 1); } 
         else if (direction === 'prev') { setCurrentPage(prev => prev - 1); }
         setLastId(newLastId); setHasMore(data.length === ITEMS_PER_PAGE && data.length > 0);
-        setImageErrors({}); data.forEach(s => loadImageForSortie(s));
+        setImageErrors({}); 
+        imagesLoaded.current.clear(); // ✅ FIX: Clear cache rehefa page vaovao
+        data.forEach(s => loadImageForSortie(s));
       }
       if (window.api?.products?.getAll) window.api.products.getAll({ limit: 50, status: 'actif' }).then(pr => { if (pr?.success && isMounted.current) setProduits((pr.data || []).filter((p: any) => p.quantite_stock > 0)); }).catch(() => {});
     } catch (err: any) { if (isMounted.current) { setSorties([]); setHasMore(false); setTotalItems(0); } }

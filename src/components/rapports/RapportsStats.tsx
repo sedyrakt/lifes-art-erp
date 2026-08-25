@@ -58,6 +58,7 @@ const RapportsStats: React.FC<RapportsStatsProps> = ({ stats, refreshing = false
     return { ...stats, chiffreAffaires: totalCA, nbCommandes, nbClients: nbClientsUniques, tauxBenefice: totalCA > 0 ? (stats.benefice / totalCA) * 100 : 0, totalVentes: nbCommandes };
   }, [commandes, selectedDate, granularity, stats]);
 
+  // ⭐ FIX: Format Ariary tsotra (tsy mampiasa formatMoney)
   const formatSimple = (value: number) => value.toLocaleString('fr-FR') + ' Ar';
 
   const statsCards = [
@@ -85,20 +86,20 @@ const RapportsStats: React.FC<RapportsStatsProps> = ({ stats, refreshing = false
           return (
             <div 
               key={stat.key} 
-              className="group relative min-h-[70px] rounded-lg border border-slate-300 bg-white px-3.5 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:shadow-[0_2px_6px_rgba(15,23,42,0.05)] ring-1 ring-transparent hover:ring-indigo-500/20 dark:border-slate-700 dark:bg-[#111c30] dark:hover:border-slate-600 dark:hover:bg-slate-800/50 dark:hover:shadow-none dark:hover:ring-indigo-500/20"
+              className="group relative min-h-[80px] rounded-lg border border-slate-300 bg-white px-4 py-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:shadow-[0_2px_6px_rgba(15,23,42,0.05)] ring-1 ring-transparent hover:ring-indigo-500/20 dark:border-slate-700 dark:bg-[#111c30] dark:hover:border-slate-600 dark:hover:bg-slate-800/50 dark:hover:shadow-none dark:hover:ring-indigo-500/20"
             >
               {/* Accent left bar on hover */}
               <div className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-r-full bg-indigo-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100 dark:bg-indigo-400`} />
               
               <div className="flex items-start gap-3">
-                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${colorConfig.iconClass}`}>
-                  <Icon size={18} strokeWidth={2} />
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${colorConfig.iconClass}`}>
+                  <Icon size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[16px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                  <div className="text-[18px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                     {stat.value}
                   </div>
-                  <div className="mt-0.5 truncate text-[13px] font-medium text-slate-500 dark:text-slate-400">
+                  <div className="mt-0.5 truncate text-[14px] font-medium text-slate-500 dark:text-slate-400">
                     {stat.label}
                   </div>
                   {showTrend && (

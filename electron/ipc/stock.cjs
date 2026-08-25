@@ -1,16 +1,6 @@
-// ============================================================
-// electron/ipc/stock.cjs
-// ⭐ MODULE PRINCIPAL STOCK
-// ============================================================
-
-const {
-  registerStockHandlers,
-} = require('./stock/index.cjs');
-
+const { registerStockHandlers } = require('./stock/handlers.cjs');
 module.exports = {
   registerStockHandlers,
+  register: registerStockHandlers,  // ⭐ Alias
+  registerHandlers: registerStockHandlers  // ⭐ Alias
 };
-
-console.log(
-  '📦 [stock.cjs] Module principal chargé'
-);

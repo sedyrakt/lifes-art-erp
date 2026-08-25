@@ -1,7 +1,3 @@
-// ============================================================
-// database/tables.cjs - SCHEMA COMPLET (CORRIGÉ)
-// ⭐ Version finale A-Z
-// ============================================================
 'use strict';
 
 const { getDb } = require('./connection.cjs');
@@ -9,10 +5,6 @@ const { getDb } = require('./connection.cjs');
 const log = (...args) => console.log('[tables]', ...args);
 const error = (...args) => console.error('[tables]', ...args);
 const warn = (...args) => console.warn('[tables]', ...args);
-
-// ============================================================
-// HELPERS
-// ============================================================
 
 function tableExists(db, tableName) {
   try {
@@ -54,10 +46,6 @@ function createIndex(db, sql, name) {
   }
 }
 
-// ============================================================
-// CRÉATION DES TABLES + INDEX + FTS + TRIGGERS
-// ============================================================
-
 function ensureTables() {
   const db = getDb();
   if (!db || !db.open) {
@@ -69,10 +57,9 @@ function ensureTables() {
     log('🔄 Création/vérification du schéma database...');
 
     // ==========================================================
-    // 1. TABLES PRINCIPALES
+    // 1. CRÉATION DES TABLES
     // ==========================================================
 
-    // ---------- CATEGORIES ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,7 +69,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- FOURNISSEURS ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS fournisseurs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,7 +83,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- PRODUITS ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS produits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,7 +106,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- CLIENTS ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS clients (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -139,7 +123,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- COMMANDES ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS commandes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -156,7 +139,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- DETAILS COMMANDES ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS details_commandes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -170,7 +152,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- UTILISATEURS ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS utilisateurs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -193,7 +174,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- SESSIONS ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -205,7 +185,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- AUDIT LOGS ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS audit_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -219,7 +198,6 @@ function ensureTables() {
       );
     `);
 
-    // ⭐ NOUVEAU: SECURITY LOGS (mifanaraka amin'ny logger.cjs)
     db.exec(`
       CREATE TABLE IF NOT EXISTS security_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -233,7 +211,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- ENTREES STOCK ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS entrees_stock (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -250,7 +227,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- SORTIES STOCK ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS sorties_stock (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -266,7 +242,7 @@ function ensureTables() {
       );
     `);
 
-    // ---------- MOUVEMENTS STOCK ----------
+    // ⭐ FIX: NAMPIANA NY prix_unitaire ao amin'ny mouvements_stock
     db.exec(`
       CREATE TABLE IF NOT EXISTS mouvements_stock (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -277,6 +253,7 @@ function ensureTables() {
         nouveau_stock INTEGER NOT NULL,
         reference TEXT,
         observation TEXT,
+        prix_unitaire REAL DEFAULT 0,
         created_by INTEGER,
         date_mouvement TEXT DEFAULT CURRENT_TIMESTAMP,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -285,7 +262,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- EMPLOYES ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS employes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -304,7 +280,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- PAIEMENTS EMPLOYES ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS paiements_employes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -321,7 +296,6 @@ function ensureTables() {
       );
     `);
 
-    // ---------- DEPENSES ----------
     db.exec(`
       CREATE TABLE IF NOT EXISTS depenses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -332,6 +306,145 @@ function ensureTables() {
         date_depense TEXT DEFAULT CURRENT_TIMESTAMP,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (fournisseur_id) REFERENCES fournisseurs(id) ON DELETE SET NULL
+      );
+    `);
+
+    // ==========================================================
+    // ⭐ MODULES ERP: COMPTABILITÉ
+    // ==========================================================
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS comptes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        numero TEXT NOT NULL UNIQUE,
+        nom TEXT NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('actif','passif','produit','charge')),
+        solde_initial REAL DEFAULT 0,
+        description TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS ecritures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        compte_id INTEGER NOT NULL,
+        libelle TEXT NOT NULL,
+        debit REAL DEFAULT 0,
+        credit REAL DEFAULT 0,
+        reference TEXT,
+        date_ecriture TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (compte_id) REFERENCES comptes(id) ON DELETE RESTRICT
+      );
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS journaux (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        nom TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // ==========================================================
+    // ⭐ MODULES ERP: ACHATS
+    // ==========================================================
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS achats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fournisseur_id INTEGER NOT NULL,
+        reference TEXT,
+        date_achat TEXT DEFAULT CURRENT_TIMESTAMP,
+        total_ht REAL DEFAULT 0,
+        total_ttc REAL DEFAULT 0,
+        designation TEXT,
+        nombre_produits INTEGER DEFAULT 0,
+        statut TEXT DEFAULT 'En attente',
+        observation TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (fournisseur_id) REFERENCES fournisseurs(id) ON DELETE RESTRICT
+      );
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS details_achats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        achat_id INTEGER NOT NULL,
+        produit_id INTEGER NOT NULL,
+        quantite INTEGER NOT NULL,
+        prix_unitaire REAL NOT NULL,
+        total REAL NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (achat_id) REFERENCES achats(id) ON DELETE CASCADE,
+        FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE RESTRICT
+      );
+    `);
+
+    // ==========================================================
+    // ⭐ MODULES ERP: VENTES (Devis & Factures) - NAMPIANA
+    // ==========================================================
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS devis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id INTEGER,
+        client_nom TEXT NOT NULL,
+        reference TEXT,
+        total_ht REAL DEFAULT 0,
+        total_ttc REAL DEFAULT 0,
+        validite_jours INTEGER DEFAULT 30,
+        statut TEXT DEFAULT 'En attente',
+        observation TEXT,
+        date_devis TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
+      );
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS details_devis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        devis_id INTEGER NOT NULL,
+        produit_id INTEGER NOT NULL,
+        quantite INTEGER NOT NULL,
+        prix_unitaire REAL NOT NULL,
+        total REAL NOT NULL,
+        FOREIGN KEY (devis_id) REFERENCES devis(id) ON DELETE CASCADE,
+        FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE RESTRICT
+      );
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS factures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id INTEGER,
+        client_nom TEXT NOT NULL,
+        reference TEXT,
+        total_ht REAL DEFAULT 0,
+        total_ttc REAL DEFAULT 0,
+        observation TEXT,
+        date_facture TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
+      );
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS details_factures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        facture_id INTEGER NOT NULL,
+        produit_id INTEGER NOT NULL,
+        quantite INTEGER NOT NULL,
+        prix_unitaire REAL NOT NULL,
+        total REAL NOT NULL,
+        FOREIGN KEY (facture_id) REFERENCES factures(id) ON DELETE CASCADE,
+        FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE RESTRICT
       );
     `);
 
@@ -357,6 +470,7 @@ function ensureTables() {
       addColumnIfMissing(db, 'utilisateurs', 'updated_at', 'TEXT DEFAULT CURRENT_TIMESTAMP');
     }
     if (tableExists(db, 'produits')) {
+      addColumnIfMissing(db, 'produits', 'unite', "TEXT DEFAULT 'pièce'");
       addColumnIfMissing(db, 'produits', 'image', 'TEXT');
       addColumnIfMissing(db, 'produits', 'status', "TEXT DEFAULT 'actif'");
       addColumnIfMissing(db, 'produits', 'statut_stock', "TEXT DEFAULT 'disponible'");
@@ -387,70 +501,73 @@ function ensureTables() {
       addColumnIfMissing(db, 'employes', 'updated_at', 'TEXT DEFAULT CURRENT_TIMESTAMP');
     }
 
+    if (tableExists(db, 'achats')) {
+      addColumnIfMissing(db, 'achats', 'designation', 'TEXT');
+      addColumnIfMissing(db, 'achats', 'nombre_produits', 'INTEGER DEFAULT 0');
+      addColumnIfMissing(db, 'achats', 'updated_at', 'TEXT DEFAULT CURRENT_TIMESTAMP');
+    }
+
+    if (tableExists(db, 'details_achats')) {
+      addColumnIfMissing(db, 'details_achats', 'created_at', 'TEXT DEFAULT CURRENT_TIMESTAMP');
+    }
+
+    // ⭐ FIX: NAMPIANA NY MIGRATION HO AN'NY mouvements_stock
+    if (tableExists(db, 'mouvements_stock')) {
+      addColumnIfMissing(db, 'mouvements_stock', 'prix_unitaire', 'REAL DEFAULT 0');
+    }
+
     // ==========================================================
     // 3. INDEXES
     // ==========================================================
-    const productIndexes = [
-      [`CREATE INDEX IF NOT EXISTS idx_produits_status_id ON produits(status, id)`, 'idx_produits_status_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_produits_status_created_id ON produits(status, created_at, id)`, 'idx_produits_status_created_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_produits_status_nom_id ON produits(status, nom COLLATE NOCASE, id)`, 'idx_produits_status_nom_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_produits_status_prix_id ON produits(status, prix_vente, id)`, 'idx_produits_status_prix_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_produits_status_stock_id ON produits(status, quantite_stock, id)`, 'idx_produits_status_stock_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_produits_categorie_status_id ON produits(categorie_id, status, id)`, 'idx_produits_categorie_status_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_produits_categorie_status_nom_id ON produits(categorie_id, status, nom COLLATE NOCASE, id)`, 'idx_produits_categorie_status_nom_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_produits_fournisseur_id ON produits(fournisseur_id)`, 'idx_produits_fournisseur_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_produits_code ON produits(code)`, 'idx_produits_code'],
-      [`CREATE INDEX IF NOT EXISTS idx_produits_stock_min ON produits(quantite_stock, quantite_minimale, id)`, 'idx_produits_stock_min'],
-    ];
-    for (const [sql, name] of productIndexes) createIndex(db, sql, name);
+    log('🔧 Création des indexes...');
 
-    const stockIndexes = [
-      [`CREATE INDEX IF NOT EXISTS idx_entrees_date_id ON entrees_stock(date_entree DESC, id DESC)`, 'idx_entrees_date_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_entrees_produit_date ON entrees_stock(produit_id, date_entree DESC, id DESC)`, 'idx_entrees_produit_date'],
-      [`CREATE INDEX IF NOT EXISTS idx_entrees_fournisseur ON entrees_stock(fournisseur_id)`, 'idx_entrees_fournisseur'],
-      [`CREATE INDEX IF NOT EXISTS idx_sorties_date_id ON sorties_stock(date_sortie DESC, id DESC)`, 'idx_sorties_date_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_sorties_produit_date ON sorties_stock(produit_id, date_sortie DESC, id DESC)`, 'idx_sorties_produit_date'],
-      [`CREATE INDEX IF NOT EXISTS idx_mouvements_date_id ON mouvements_stock(date_mouvement DESC, id DESC)`, 'idx_mouvements_date_id'],
-      [`CREATE INDEX IF NOT EXISTS idx_mouvements_produit_date ON mouvements_stock(produit_id, date_mouvement DESC, id DESC)`, 'idx_mouvements_produit_date'],
-      [`CREATE INDEX IF NOT EXISTS idx_mouvements_type_date ON mouvements_stock(type_mouvement, date_mouvement DESC, id DESC)`, 'idx_mouvements_type_date'],
-    ];
-    for (const [sql, name] of stockIndexes) createIndex(db, sql, name);
+    if (tableExists(db, 'achats')) {
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_achats_fournisseur ON achats(fournisseur_id)`, 'idx_achats_fournisseur');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_achats_date ON achats(date_achat)`, 'idx_achats_date');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_achats_statut ON achats(statut)`, 'idx_achats_statut');
+    }
+    if (tableExists(db, 'details_achats')) {
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_details_achats_achat ON details_achats(achat_id)`, 'idx_details_achats_achat');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_details_achats_produit ON details_achats(produit_id)`, 'idx_details_achats_produit');
+    }
 
-    if (tableExists(db, 'commandes')) {
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_commandes_client_id ON commandes(client_id)`, 'idx_commandes_client_id');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_commandes_date ON commandes(date_commande DESC)`, 'idx_commandes_date');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_commandes_statut ON commandes(statut)`, 'idx_commandes_statut');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_commandes_id_desc ON commandes(id DESC)`, 'idx_commandes_id_desc');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_commandes_date_id ON commandes(date_commande DESC, id DESC)`, 'idx_commandes_date_id');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_commandes_statut_id ON commandes(statut, id DESC)`, 'idx_commandes_statut_id');
+    if (tableExists(db, 'devis')) {
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_devis_client ON devis(client_id)`, 'idx_devis_client');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_devis_date ON devis(date_devis)`, 'idx_devis_date');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_devis_statut ON devis(statut)`, 'idx_devis_statut');
     }
-    if (tableExists(db, 'details_commandes')) {
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_details_commandes_commande ON details_commandes(commande_id)`, 'idx_details_commandes_commande');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_details_commandes_produit ON details_commandes(commande_id, produit_id)`, 'idx_details_commandes_produit');
+    if (tableExists(db, 'details_devis')) {
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_details_devis_devis ON details_devis(devis_id)`, 'idx_details_devis_devis');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_details_devis_produit ON details_devis(produit_id)`, 'idx_details_devis_produit');
     }
-    if (tableExists(db, 'clients')) {
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_clients_nom ON clients(nom COLLATE NOCASE)`, 'idx_clients_nom');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_clients_email ON clients(email)`, 'idx_clients_email');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_clients_type ON clients(type)`, 'idx_clients_type');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_clients_ville ON clients(ville)`, 'idx_clients_ville');
+    if (tableExists(db, 'factures')) {
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_factures_client ON factures(client_id)`, 'idx_factures_client');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_factures_date ON factures(date_facture)`, 'idx_factures_date');
     }
-    if (tableExists(db, 'fournisseurs')) {
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_fournisseurs_nom ON fournisseurs(nom COLLATE NOCASE)`, 'idx_fournisseurs_nom');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_fournisseurs_email ON fournisseurs(email)`, 'idx_fournisseurs_email');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_fournisseurs_telephone ON fournisseurs(telephone)`, 'idx_fournisseurs_telephone');
+    if (tableExists(db, 'details_factures')) {
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_details_factures_facture ON details_factures(facture_id)`, 'idx_details_factures_facture');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_details_factures_produit ON details_factures(produit_id)`, 'idx_details_factures_produit');
     }
+
+    // Comptabilité indexes
+    if (tableExists(db, 'comptes')) {
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_comptes_numero ON comptes(numero)`, 'idx_comptes_numero');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_comptes_type ON comptes(type)`, 'idx_comptes_type');
+    }
+    if (tableExists(db, 'ecritures')) {
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_ecritures_compte ON ecritures(compte_id)`, 'idx_ecritures_compte');
+      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_ecritures_date ON ecritures(date_ecriture)`, 'idx_ecritures_date');
+    }
+
+    createIndex(db, `CREATE INDEX IF NOT EXISTS idx_produits_code ON produits(code)`, 'idx_produits_code');
+    createIndex(db, `CREATE INDEX IF NOT EXISTS idx_produits_status ON produits(status)`, 'idx_produits_status');
+    createIndex(db, `CREATE INDEX IF NOT EXISTS idx_produits_categorie ON produits(categorie_id)`, 'idx_produits_categorie');
+    createIndex(db, `CREATE INDEX IF NOT EXISTS idx_produits_fournisseur ON produits(fournisseur_id)`, 'idx_produits_fournisseur');
+
     createIndex(db, `CREATE INDEX IF NOT EXISTS idx_utilisateurs_email ON utilisateurs(email)`, 'idx_utilisateurs_email');
     createIndex(db, `CREATE INDEX IF NOT EXISTS idx_utilisateurs_status ON utilisateurs(status)`, 'idx_utilisateurs_status');
     createIndex(db, `CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)`, 'idx_sessions_token');
     createIndex(db, `CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions(userId)`, 'idx_sessions_userId');
-    if (tableExists(db, 'employes')) {
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_employes_email ON employes(email)`, 'idx_employes_email');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_employes_status ON employes(status)`, 'idx_employes_status');
-    }
-    if (tableExists(db, 'paiements_employes')) {
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_paiements_employes_employe ON paiements_employes(employe_id)`, 'idx_paiements_employes_employe');
-      createIndex(db, `CREATE INDEX IF NOT EXISTS idx_paiements_employes_period ON paiements_employes(mois, annee)`, 'idx_paiements_employes_period');
-    }
 
     // ==========================================================
     // 4. FTS5 PRODUITS
@@ -472,13 +589,6 @@ function ensureTables() {
     } catch (triggerErr) { warn('⚠️ Trigger statut_stock non configuré:', triggerErr.message); }
 
     // ==========================================================
-    // 6. SYNCHRONISATION INITIALE
-    // ==========================================================
-    try {
-      db.exec(`UPDATE produits SET statut_stock = CASE WHEN quantite_stock <= 0 THEN 'rupture' WHEN quantite_stock <= quantite_minimale THEN 'alerte' ELSE 'disponible' END;`);
-    } catch (err) { warn('⚠️ Synchronisation statut_stock ignorée:', err.message); }
-
-    // ==========================================================
     // FIN
     // ==========================================================
     log('================================================');
@@ -488,6 +598,7 @@ function ensureTables() {
     log('✅ Index vérifiés');
     log('✅ FTS5 vérifié');
     log('✅ Triggers vérifiés');
+    log('✅ Modules ERP: Comptabilité, Achats, Ventes');
     log('================================================');
     return true;
 

@@ -1,5 +1,6 @@
 # ============================================================
 # LIFE'S ART ERP - GitHub Actions - Windows + Linux
+# ⭐ FIX: Mampiasa dist-electron/ (obfuscated) fa tsy electron/
 # ============================================================
 
 name: Build & Release
@@ -74,6 +75,9 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+      - name: Build obfuscated
+        run: npm run build:obfuscate
 
       - name: Verify production frontend
         shell: pwsh
@@ -194,6 +198,9 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Build obfuscated
+        run: npm run build:obfuscate
+
       - name: Verify production frontend
         shell: bash
         run: |
@@ -206,10 +213,10 @@ jobs:
 
       - name: Build Linux DEB
         run: |
-          npx electron-builder \
-            --linux deb \
-            --x64 \
-            --config electron-builder.yml \
+          npx electron-builder `
+            --linux deb `
+            --x64 `
+            --config electron-builder.yml `
             --publish=never
 
       - name: Show Linux output

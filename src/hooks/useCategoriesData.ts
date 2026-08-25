@@ -12,6 +12,12 @@ const SORT_MAP = {
 } as const;
 
 export const useCategoriesData = () => {
+  // ✅ FIX: HOOKS REHETRA ETO AMBONY (TSY MISY CONDITION)
+  const isMounted = useRef(true);
+  const fetchLock = useRef(false);
+  const firstLoadDone = useRef(false);
+  const loadDataRef = useRef<() => Promise<void>>(async () => {});
+
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -22,10 +28,6 @@ export const useCategoriesData = () => {
   const [totalPages, setTotalPages] = useState(0);
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const isMounted = useRef(true);
-  const fetchLock = useRef(false);
-  const firstLoadDone = useRef(false);
-  const loadDataRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     isMounted.current = true;
@@ -204,4 +206,3 @@ export const useCategoriesData = () => {
     ITEMS_PER_PAGE,
   };
 };
-

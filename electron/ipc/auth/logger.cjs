@@ -1,15 +1,16 @@
 // ============================================================
-// electron/ipc/users/logger.cjs - LOGGING
+// electron/ipc/auth/logger.cjs
 // ============================================================
+'use strict';
 
-const DEBUG = false; // ⭐ Production safe, tsy miankina amin'ny process.env
+const DEBUG = false;
 
 function log(...args) {
-  if (DEBUG) console.log('[👥 users]', ...args);
+  if (DEBUG) console.log(...args);
 }
 
 function error(...args) {
-  console.error('[❌ users]', ...args);
+  console.error(...args);
 }
 
-module.exports = { log, error, DEBUG };
+module.exports = { log, error };

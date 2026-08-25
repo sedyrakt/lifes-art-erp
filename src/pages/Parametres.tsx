@@ -1,8 +1,8 @@
 // ============================================================
 // src/pages/Parametres.tsx
-// ============================================================
 // ⭐ PARAMETRES PAGE
 // ⭐ Security tab removed (ParametresSecurity no longer needed)
+// ⭐ FIX: NAMPIANA NY PARAMETRES LICENSE
 // ⭐ DARK + LIGHT MODE
 // ⭐ READABLE TYPOGRAPHY
 // ⭐ ALL BORDER SYSTEM
@@ -20,12 +20,14 @@ import {
   LogOut,
   Database,
   RefreshCw,
+  Crown,
 } from 'lucide-react';
 
 import ParametresGeneral from '../components/parametres/ParametresGeneral';
 import ParametresProfile from '../components/parametres/ParametresProfile';
 import ParametresSystemInfo from '../components/parametres/ParametresSystemInfo';
 import ParametresBackup from '../components/parametres/ParametresBackup';
+import ParametresLicense from '../components/parametres/ParametresLicense';
 
 import SuccessModal from '../components/common/SuccessModal';
 import ErrorModal from '../components/common/ErrorModal';
@@ -39,6 +41,21 @@ interface AppSettings {
   timeZone: string;
 }
 
+interface LicenseInfo {
+  packageType: string | null;
+  packageName: string;
+  daysRemaining: number;
+  minutesRemaining?: number | null;
+  expirationDate: string | null;
+  initialExpirationDate: string | null;
+  isActive: boolean;
+  isUnlimited: boolean;
+  customerName: string;
+  companyName: string;
+  features: string[];
+  licenseKey: string;
+}
+
 const Parametres: React.FC = () => {
   const { isDark } = useTheme();
   const { user, logout } = useAuth();
@@ -48,7 +65,7 @@ const Parametres: React.FC = () => {
 
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<'general' | 'profile' | 'system' | 'backup'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'profile' | 'system' | 'backup' | 'license'>('general');
 
   const [settings, setSettings] = useState<AppSettings>({
     appName: "Life's Art",
@@ -68,6 +85,23 @@ const Parametres: React.FC = () => {
     arch: 'N/A',
     memory: 'N/A',
     cpu: 'N/A',
+  });
+
+  // ⭐ FIX: State ho an'ny License
+  const [licenseStatus, setLicenseStatus] = useState<string | null>(null);
+  const [licenseInfo, setLicenseInfo] = useState<LicenseInfo>({
+    packageType: null,
+    packageName: 'Aucune licence',
+    daysRemaining: 0,
+    minutesRemaining: null,
+    expirationDate: null,
+    initialExpirationDate: null,
+    isActive: false,
+    isUnlimited: false,
+    customerName: '',
+    companyName: '',
+    features: [],
+    licenseKey: '',
   });
 
   const [successModal, setSuccessModal] = useState({ isOpen: false, title: '', message: '', details: '', autoClose: 4000 });
@@ -127,15 +161,43 @@ const Parametres: React.FC = () => {
     }
   }, []);
 
+  // ⭐ FIX: Load License Info
+  const loadLicense = useCallback(async () => {
+    try {
+      const result = await window.api.license.checkStatus();
+      if (result?.success) {
+        setLicenseStatus(result.status || 'UNKNOWN');
+        setLicenseInfo(prev => ({
+          ...prev,
+          packageType: result.packageType || null,
+          packageName: result.packageName || result.packageType || 'Aucune licence',
+          daysRemaining: Number(result.daysRemaining) || 0,
+          minutesRemaining: result.minutesRemaining != null ? Number(result.minutesRemaining) : null,
+          expirationDate: result.expirationDate || null,
+          initialExpirationDate: result.expirationDate || null,
+          isActive: result.isValid === true && result.isActive === true,
+          isUnlimited: result.isLifetime === true,
+          customerName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : '',
+          companyName: user?.companyName || '',
+          features: [],
+          licenseKey: result.licenseKey || '',
+        }));
+      }
+    } catch (error) {
+      console.error('Erreur chargement license:', error);
+    }
+  }, [user]);
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
       await loadSettings();
       await loadSystemInfo();
+      await loadLicense();
       setLoading(false);
     };
     init();
-  }, [loadSettings, loadSystemInfo]);
+  }, [loadSettings, loadSystemInfo, loadLicense]);
 
   const handleSettingsChange = (newSettings: AppSettings) => setSettings(newSettings);
 
@@ -157,11 +219,13 @@ const Parametres: React.FC = () => {
     navigate('/login');
   }, [logout, navigate]);
 
+  // ⭐ FIX: NAMPIANA NY TAB LICENSE
   const tabItems = [
     { id: 'general', label: 'Général', icon: Settings2 },
     { id: 'profile', label: 'Profil', icon: User },
     { id: 'system', label: 'Système', icon: Info },
     { id: 'backup', label: 'Sauvegarde', icon: Database },
+    { id: 'license', label: 'Licence', icon: Crown },
   ];
 
   const renderContent = () => {
@@ -174,6 +238,9 @@ const Parametres: React.FC = () => {
         return <ParametresSystemInfo systemInfo={systemInfo} isDark={isDark} />;
       case 'backup':
         return <ParametresBackup isDark={isDark} />;
+      // ⭐ FIX: NAMPIANA NY LICENSE
+      case 'license':
+        return <ParametresLicense status={licenseStatus} licenseInfo={licenseInfo} isDark={isDark} />;
       default:
         return null;
     }
