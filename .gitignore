@@ -108,7 +108,9 @@ license.lic
 *.jsc
 *.jsc.map
 
-# ⭐ Fiarovana ny Build Scripts (Obfuscation)
-build-obfuscated.cjs
-build-final-bytecode.cjs
-build-prod.cjs
+# ============================================================
+# ⭐ BUILD SCRIPTS (ILAINA ANY AMIN'NY GITHUB ACTIONS)
+# ⚠️ build-obfuscated.cjs - IL AINA (azo alefa any amin'ny GitHub)
+# ⚠️ build-final-bytecode.cjs - TSY ILAINA (azo esorina)
+# ⚠️ build-prod.cjs - TSY ILAINA (azo esorina)
+# ============================================================
