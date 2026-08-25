@@ -1,6 +1,6 @@
 # ============================================================
 # LIFE'S ART ERP - GitHub Actions - Windows + Linux
-# ⭐ FIX: Ampiana ny GH_TOKEN
+# ⭐ FIX: Esory ny backtick (tsy mandeha amin'ny bash)
 # ============================================================
 
 name: Build & Release
@@ -90,12 +90,7 @@ jobs:
           Write-Host "OK: dist/index.html"
 
       - name: Build Windows Installer EXE
-        run: |
-          npx electron-builder `
-            --win `
-            --x64 `
-            --config electron-builder.yml `
-            --publish=never
+        run: npx electron-builder --win --x64 --config electron-builder.yml --publish=never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -214,12 +209,7 @@ jobs:
           echo "OK: dist/index.html"
 
       - name: Build Linux DEB
-        run: |
-          npx electron-builder `
-            --linux deb `
-            --x64 `
-            --config electron-builder.yml `
-            --publish=never
+        run: npx electron-builder --linux deb --x64 --config electron-builder.yml --publish=never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
