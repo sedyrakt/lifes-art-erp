@@ -1,6 +1,6 @@
 # ============================================================
 # LIFE'S ART ERP - GitHub Actions - Windows + Linux
-# ⭐ FIX: Mampiasa dist-electron/ (obfuscated) fa tsy electron/
+# ⭐ FIX: Ampiana ny GH_TOKEN
 # ============================================================
 
 name: Build & Release
@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-windows:
@@ -96,6 +96,8 @@ jobs:
             --x64 `
             --config electron-builder.yml `
             --publish=never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Show Windows output
         shell: pwsh
@@ -218,6 +220,8 @@ jobs:
             --x64 `
             --config electron-builder.yml `
             --publish=never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Show Linux output
         shell: bash
