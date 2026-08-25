@@ -1,8 +1,7 @@
 # ============================================================
 # LIFE'S ART ERP
 # electron-builder.yml
-# ⭐ FIX: Mampiasa dist-electron/ fa tsy electron/
-# ⭐ FIX: ESRINA NY admin-tools
+# ⭐ FIX: Ampiana ny desktopName sy synopsisDesktopName
 # ============================================================
 
 appId: com.lifesart.app
@@ -14,10 +13,6 @@ directories:
 compression: normal
 npmRebuild: false
 
-# ============================================================
-# FILES
-# ============================================================
-
 files:
   - dist/**/*
   - dist-electron/**/*
@@ -26,47 +21,28 @@ files:
   - "!**/node_modules/.cache/**"
   - "!dist-electron/keys/private.pem"
   - "!dist-electron/keys/fingerprint.txt"
-  - "!admin-tools/**/*"           # ⭐ FIX: ESRINA NY admin-tools
-
-# ============================================================
-# ASAR
-# ============================================================
+  - "!admin-tools/**/*"
 
 asar: true
-
-# ============================================================
-# ASAR UNPACK
-# ⭐ FIX: Ilaina ho an'ny native modules
-# ============================================================
 
 asarUnpack:
   - "**/*.node"
   - "**/node_modules/better-sqlite3/**/*"
   - "**/node_modules/sharp/**/*"
 
-# ============================================================
-# WINDOWS
-# ============================================================
-
 win:
   target:
     - nsis
   icon: public/logo.ico
 
-# ============================================================
-# NSIS
-# ============================================================
-
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-
-# ============================================================
-# LINUX
-# ============================================================
 
 linux:
   target:
     - deb
   category: Office
   icon: public/logo.png
+  desktopName: lifes-art
+  synopsisDesktopName: Life's Art ERP
